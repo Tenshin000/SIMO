@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Corpo della fragola (rosso lampone pasticceria) -->
+    <path
+        android:fillColor="#E24B6A"
+        android:pathData="M54,88 C45,88 33,74 29,62 C25,50 26,41 33,36 C38,32 46,34 54,38 C62,34 70,32 75,36 C82,41 83,50 79,62 C75,74 63,88 54,88 Z" />
+
+    <!-- Riflesso morbido sulla fragola -->
+    <path
+        android:fillColor="#ED6F87"
+        android:pathData="M35,42 C38,36 46,36 50,39 C44,39 37,44 35,50 C34,47 34,44 35,42 Z" />
+
+    <!-- Foglioline verdi della fragola -->
+    <path
+        android:fillColor="#48A868"
+        android:pathData="M54,38 C51,32 43,26 36,29 C38,34 43,37 47,38 Z" />
+    <path
+        android:fillColor="#5CB87A"
+        android:pathData="M54,38 C54,30 54,23 54,22 C56,26 57,32 55,38 Z" />
+    <path
+        android:fillColor="#48A868"
+        android:pathData="M54,38 C57,32 65,26 72,29 C70,34 65,37 61,38 Z" />
+    <path
+        android:fillColor="#3B8E56"
+        android:pathData="M51,36 C47,35 43,36 41,39 C45,40 50,38 51,36 Z" />
+    <path
+        android:fillColor="#3B8E56"
+        android:pathData="M57,36 C61,35 65,36 67,39 C63,40 58,38 57,36 Z" />
+
+    <!-- Picciolo centrale -->
+    <path
+        android:fillColor="#2D6A40"
+        android:pathData="M53,23 C53,19 56,17 58,16 C57,18 56,21 55,24 Z" />
+
+    <!-- Semini dorati della fragola -->
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M42,47a1.5,2 0 1,0 0.1,0 Z" />
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M54,46a1.5,2 0 1,0 0.1,0 Z" />
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M66,47a1.5,2 0 1,0 0.1,0 Z" />
+
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M36,56a1.5,2 0 1,0 0.1,0 Z" />
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M48,55a1.5,2 0 1,0 0.1,0 Z" />
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M60,55a1.5,2 0 1,0 0.1,0 Z" />
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M72,56a1.5,2 0 1,0 0.1,0 Z" />
+
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M42,65a1.5,2 0 1,0 0.1,0 Z" />
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M54,64a1.5,2 0 1,0 0.1,0 Z" />
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M66,65a1.5,2 0 1,0 0.1,0 Z" />
+
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M48,74a1.5,2 0 1,0 0.1,0 Z" />
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M60,74a1.5,2 0 1,0 0.1,0 Z" />
+
+    <path
+        android:fillColor="#FFF099"
+        android:pathData="M54,81a1.2,1.6 0 1,0 0.1,0 Z" />
+</vector>
