@@ -189,8 +189,9 @@ $$\text{Costo} = 350 \times 10^{-3} \times 1.60 = 0.56\text{ €}$$
 #### Tabella dei 14 Allergeni Normativi (Regolamento UE 1169/2011)
 SIMO mappa e traccia nativamente l'elenco completo dei 14 allergeni alimentari normati a livello europeo:
 
+
 | N° | Allergene | Esempi Tipici di Materie Prime Coinvolte |
-| :: | : | : |
+|---|---|---|
 | **1** | **Glutine** | Frumento, farina di grano tenero e duro, segale, orzo, avena, farro, manitoba |
 | **2** | **Crostacei** | Gamberi, scampi, aragoste, granchi |
 | **3** | **Uova** | Uova intere, tuorli, albumi, maionese artigianale |
@@ -205,6 +206,7 @@ SIMO mappa e traccia nativamente l'elenco completo dei 14 allergeni alimentari n
 | **12** | **Anidride solforosa e solfiti** | Vini da sfumare, frutta disidratata con conservanti ($> 10\,\text{mg/kg}$) |
 | **13** | **Lupini** | Farine a base di lupino, preparati vegani |
 | **14** | **Molluschi** | Cozze, vongole, calamari, polpo, seppie |
+
 
 #### Presentazione Grafica Anti-Frammentazione dei Badge
 Nella scheda degli allergeni, ogni voce è identificata dal nome della categoria merceologica e da un badge normativo (es. `Allergene #7`). L'interfaccia di SIMO adotta un algoritmo tipografico protetto da vincoli di linea singola (*soft-wrap prevention*): anche in presenza di nomi lunghi o caratteri di grandi dimensioni sul display dello smartphone, il badge numerico non subisce mai compressione o spezzature antiestetiche, restando sempre chiaro e leggibile.
@@ -534,7 +536,7 @@ La correzione architetturale applica due vincoli concorrenti di layout:
 Il database relazionale locale è implementato mediante **Android Room** (schema version 12):
 
 | Tabella | Colonne Chiave e Tipi | Descrizione e Vincoli |
-| : | : | : |
+|---|---|---|
 | **`items`** | `id` (TEXT PK), `name` (TEXT), `type` (TEXT), `defaultUnit` (TEXT), `pricePerUnit` (REAL), `priceUnit` (TEXT), `gramsPerUnit` (REAL), `allergens` (TEXT) | Tabella anagrafica polimorfa per ingredienti grezzi e proxy di ricette. |
 | **`recipes`** | `id` (TEXT PK), `name` (TEXT), `description` (TEXT), `baseYieldQuantity` (REAL), `yieldUnit` (TEXT), `instructions` (TEXT), `isDefault` (INTEGER), `isFavorite` (INTEGER), `category` (TEXT), `createdAt` (INTEGER) | Entità principale contenente i metadati generali della ricetta. |
 | **`recipe_components`** | `id` (INTEGER PK AUTO), `parentRecipeId` (TEXT), `childItemId` (TEXT), `baseQuantity` (REAL), `unit` (TEXT), `sortOrder` (INTEGER) | Tabella di congiunzione che modella gli archi orientati del DAG. |
@@ -910,8 +912,9 @@ Durante il ripristino (`importBackup`):
 ### Testing, Validazione e Qualità del Codice
 La garanzia di qualità e la validazione della logica di business sono assicurate da una suite di **26 test unitari** automatizzati su host JVM.
 
+
 | Suite di Test | Casi di Test | Obiettivo di Validazione |
-| : | : | : |
+|---|---|---|
 | **`MathEngineTest`** | 7 test | Scaling proporzionale lineare, reverse scaling, calcolo food cost, tolleranze numeriche. |
 | **`MathEngineSafetyTest`** | 4 test | Robustezza a floating-point estremi ($NaN, +\infty, -\infty$, zero division, cicli). |
 | **`AllergenLogicTest`** | 3 test | Riconoscimento 14 allergeni, serializzazione stringhe CSV, ereditarietà sotto-ricette. |
@@ -920,6 +923,7 @@ La garanzia di qualità e la validazione della logica di business sono assicurat
 | **`GeminiRecipeServiceTest`** | 3 test | Sanitizzazione regex JSON markdown, parsing difensivo, fallback offline euristico. |
 | **`CookingTimerExtractorTest`** | 2 test | Riconoscimento pattern ore/minuti/secondi, parsing durate composte. |
 | **`NumberUtilsTest`** | 1 test | Formattazione valori numerici e conversione stringa-float sicura con locale US/IT. |
+
 
 Nei calcoli di scaling e food cost, i numeri in virgola mobile a doppia precisione (`Double`) sono soggetti a errori di cancellazione numerica o imprecisioni infinitesime di rappresentazione binaria (es. $0.1 + 0.2 \neq 0.3$).
 Il modulo di calcolo applica sistematicamente una funzione di tolleranza:
