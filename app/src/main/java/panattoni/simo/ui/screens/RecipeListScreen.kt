@@ -90,6 +90,7 @@ import panattoni.simo.ui.theme.MacaronSubtleText
 import panattoni.simo.ui.theme.MacaronSurfaceVariant
 import panattoni.simo.ui.theme.MacaronText
 import panattoni.simo.ui.viewmodel.RecipeListViewModel
+import panattoni.simo.util.ItalianGrammarUtils
 
 /**
  * Schermata principale: elenco ricette con ricerca, filtri per tag, preferiti,
@@ -880,11 +881,7 @@ fun RecipeItemCard(
                     shape = RoundedCornerShape(8.dp),
                     color = MacaronSurfaceVariant
                 ){
-                    val yieldText = if (Math.abs(recipe.baseYieldQuantity - Math.round(recipe.baseYieldQuantity)) < 0.01){
-                        "${Math.round(recipe.baseYieldQuantity).toInt()} ${recipe.yieldUnit}"
-                    } else{
-                        "${recipe.baseYieldQuantity} ${recipe.yieldUnit}"
-                    }
+                    val yieldText = ItalianGrammarUtils.formatQuantityWithUnit(recipe.baseYieldQuantity, recipe.yieldUnit)
                     Text(
                         text = "Resa base: $yieldText",
                         color = MacaronPrimary,

@@ -1,4 +1,4 @@
-﻿package panattoni.simo.util
+package panattoni.simo.util
 
 import android.content.Context
 import android.content.Intent
@@ -144,11 +144,11 @@ object RecipePdfExporter{
         paint.color = subtleText
         canvas.drawText("Data: $dateStr", MARGIN + CONTENT_WIDTH - 14f, currentY + 28f, paint)
 
-        val yieldFormatted = NumberUtils.formatAmount(tree.targetYieldQuantity)
+        val yieldFormatted = ItalianGrammarUtils.formatQuantityWithUnit(tree.targetYieldQuantity, tree.recipe.yieldUnit)
         paint.textSize = 12f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         paint.color = primaryDark
-        canvas.drawText("Resa: $yieldFormatted ${tree.recipe.yieldUnit}", MARGIN + CONTENT_WIDTH - 14f, currentY + 48f, paint)
+        canvas.drawText("Resa: $yieldFormatted", MARGIN + CONTENT_WIDTH - 14f, currentY + 48f, paint)
 
         paint.textAlign = Paint.Align.LEFT
         currentY += headerHeight + 16f
@@ -235,7 +235,13 @@ object RecipePdfExporter{
             val qtyText = if (MeasurementUnit.isQb(unit)){
                 "q.b."
             } else{
-                "${NumberUtils.formatQuantityForUnit(comp.scaledQuantity, unit)} $unit"
+                val qtyVal = if (MeasurementUnit.isIntegerUnit(unit)){
+                    MeasurementUnit.roundIntegerAmount(comp.scaledQuantity).toDouble()
+                } else{
+                    comp.scaledQuantity
+                }
+                val displayUnit = ItalianGrammarUtils.formatUnitByQuantity(unit, qtyVal)
+                "${NumberUtils.formatQuantityForUnit(comp.scaledQuantity, unit)} $displayUnit"
             }
             paint.textAlign = Paint.Align.RIGHT
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)

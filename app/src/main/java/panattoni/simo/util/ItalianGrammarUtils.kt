@@ -1,4 +1,4 @@
-﻿package panattoni.simo.util
+package panattoni.simo.util
 
 import java.util.Locale
 
@@ -64,35 +64,118 @@ object ItalianGrammarUtils{
         "tartellette" to "tartelletta",
         "tartelletta" to "tartelletta",
         "bignè" to "bignè",
-        "babà" to "babà"
+        "babà" to "babà",
+        "persone" to "persona",
+        "persona" to "persona",
+        "piatti" to "piatto",
+        "piatto" to "piatto",
+        "ciotole" to "ciotola",
+        "ciotola" to "ciotola",
+        "vasi" to "vaso",
+        "vaso" to "vaso",
+        "bustine" to "bustina",
+        "bustina" to "bustina",
+        "foglie" to "foglia",
+        "foglia" to "foglia",
+        "spicchi" to "spicchio",
+        "spicchio" to "spicchio",
+        "rametti" to "rametto",
+        "rametto" to "rametto",
+        "rotoli" to "rotolo",
+        "rotolo" to "rotolo",
+        "cubetti" to "cubetto",
+        "cubetto" to "cubetto",
+        "gocce" to "goccia",
+        "goccia" to "goccia",
+        "pizzichi" to "pizzico",
+        "pizzico" to "pizzico",
+        "unità" to "unità",
+        "unita" to "unita"
     )
 
     private val KNOWN_PLURALS = mapOf(
         "uovo" to "uova",
+        "uova" to "uova",
         "biscotto" to "biscotti",
+        "biscotti" to "biscotti",
         "cornetto" to "cornetti",
+        "cornetti" to "cornetti",
         "porzione" to "porzioni",
+        "porzioni" to "porzioni",
         "pizza" to "pizze",
+        "pizze" to "pizze",
         "fetta" to "fette",
+        "fette" to "fette",
         "panino" to "panini",
+        "panini" to "panini",
         "pezzo" to "pezzi",
+        "pezzi" to "pezzi",
         "cucchiaio" to "cucchiai",
+        "cucchiai" to "cucchiai",
         "cucchiaino" to "cucchiaini",
+        "cucchiaini" to "cucchiaini",
         "bicchiere" to "bicchieri",
+        "bicchieri" to "bicchieri",
         "torta" to "torte",
+        "torte" to "torte",
         "focaccia" to "focacce",
+        "focacce" to "focacce",
         "treccia" to "trecce",
+        "trecce" to "trecce",
         "croissant" to "croissant",
         "muffin" to "muffin",
+        "muffins" to "muffin",
         "toast" to "toast",
         "waffle" to "waffle",
         "bignè" to "bignè",
-        "babà" to "babà"
+        "babà" to "babà",
+        "persona" to "persone",
+        "persone" to "persone",
+        "piatto" to "piatti",
+        "piatti" to "piatti",
+        "ciotola" to "ciotole",
+        "ciotole" to "ciotole",
+        "vaso" to "vasi",
+        "vasi" to "vasi",
+        "bustina" to "bustine",
+        "bustine" to "bustine",
+        "foglia" to "foglie",
+        "foglie" to "foglie",
+        "spicchio" to "spicchi",
+        "spicchi" to "spicchi",
+        "rametto" to "rametti",
+        "rametti" to "rametti",
+        "rotolo" to "rotoli",
+        "rotoli" to "rotoli",
+        "cubetto" to "cubetti",
+        "cubetti" to "cubetti",
+        "goccia" to "gocce",
+        "gocce" to "gocce",
+        "pizzico" to "pizzichi",
+        "pizzichi" to "pizzichi",
+        "barattolo" to "barattoli",
+        "barattoli" to "barattoli",
+        "pacchetto" to "pacchetti",
+        "pacchetti" to "pacchetti",
+        "vasetto" to "vasetti",
+        "vasetti" to "vasetti",
+        "bocconcino" to "bocconcini",
+        "bocconcini" to "bocconcini",
+        "tartelletta" to "tartellette",
+        "tartellette" to "tartellette",
+        "cannolo" to "cannoli",
+        "cannoli" to "cannoli",
+        "ciambella" to "ciambelle",
+        "ciambelle" to "ciambelle",
+        "sfogliatina" to "sfogliatine",
+        "sfogliatine" to "sfogliatine",
+        "tortino" to "tortini",
+        "tortino" to "tortini"
     )
 
     // Unità invariabili
     private val INVARIABLE_UNITS = setOf(
-        "g", "kg", "mg", "ml", "cl", "dl", "l", "q.b.", "qb"
+        "g", "kg", "mg", "ml", "cl", "dl", "l", "q.b.", "qb", "unità", "unita", "pz"
     )
 
     /**
@@ -156,6 +239,7 @@ object ItalianGrammarUtils{
 
     /**
      * Converte un termine o unità al plurale secondo la lingua italiana.
+     * È idempotente: se la parola è già al plurale, la restituisce invariata senza distorcerla.
      */
     fun toPlural(word: String): String{
         val trimmed = word.trim()
@@ -168,32 +252,88 @@ object ItalianGrammarUtils{
             return matchCase(trimmed, plur)
         }
 
-        val lastChar = lower.last()
+        // Se la parola è già un plurale registrato o ha una forma singolare diversa
+        val singular = KNOWN_SINGULARS[lower] ?: toSingular(trimmed).lowercase(Locale.ITALIAN)
+        if (singular != lower){
+            KNOWN_PLURALS[singular]?.let{ plur ->
+                return matchCase(trimmed, plur)
+            }
+            if (lower.endsWith("i") || lower.endsWith("e")){
+                return trimmed
+            }
+        }
+
+        val lastChar = singular.last()
         if (lastChar in ACCENTED_VOWELS || isConsonant(lastChar)){
             return trimmed
         }
 
         // -ccia / -ggia preceduta da consonante -> -cce / -gge
-        if (lower.endsWith("ccia") || lower.endsWith("ggia")){
-            return matchCase(trimmed, lower.dropLast(2) + "e")
+        if (singular.endsWith("ccia") || singular.endsWith("ggia")){
+            return matchCase(trimmed, singular.dropLast(2) + "e")
+        }
+
+        // -io atono -> -i (es. cucchiaio -> cucchiai, spicchio -> spicchi)
+        if (singular.endsWith("io")){
+            return matchCase(trimmed, singular.dropLast(1))
         }
 
         // -o -> -i
-        if (lower.endsWith("o")){
-            return matchCase(trimmed, lower.dropLast(1) + "i")
+        if (singular.endsWith("o")){
+            return matchCase(trimmed, singular.dropLast(1) + "i")
         }
 
         // -a -> -e
-        if (lower.endsWith("a")){
-            return matchCase(trimmed, lower.dropLast(1) + "e")
+        if (singular.endsWith("a")){
+            return matchCase(trimmed, singular.dropLast(1) + "e")
         }
 
         // -e -> -i
-        if (lower.endsWith("e")){
-            return matchCase(trimmed, lower.dropLast(1) + "i")
+        if (singular.endsWith("e")){
+            return matchCase(trimmed, singular.dropLast(1) + "i")
         }
 
         return trimmed
+    }
+
+    /**
+     * Restituisce l'unità flessa correttamente al singolare o al plurale in base alla quantità numerica.
+     * Es:
+     * - (unit = "porzioni", quantity = 1.0) -> "porzione"
+     * - (unit = "panino", quantity = 2.0) -> "panini"
+     * - (unit = "g", quantity = 1.0) -> "g"
+     * - (unit = "cornetti", quantity = 1.0) -> "cornetto"
+     */
+    fun formatUnitByQuantity(unit: String?, quantity: Double): String{
+        if (unit.isNullOrBlank()) return ""
+        val trimmed = unit.trim()
+        val lower = trimmed.lowercase(Locale.ITALIAN)
+        if (lower in INVARIABLE_UNITS) return trimmed
+
+        return if (Math.abs(quantity - 1.0) < 0.001){
+            toSingular(trimmed)
+        } else{
+            toPlural(trimmed)
+        }
+    }
+
+    /**
+     * Formatta quantità e unità insieme con accordo grammaticale corretto (singolare con 1, plurale con >1).
+     * Gestisce correttamente casi particolari come 'q.b.' (senza numero).
+     * Es:
+     * - (1.0, "panini") -> "1 panino"
+     * - (2.0, "panino") -> "2 panini"
+     * - (1.0, "porzioni") -> "1 porzione"
+     * - (4.0, "porzioni") -> "4 porzioni"
+     * - (500.0, "g") -> "500 g"
+     * - (1.0, "q.b.") -> "q.b."
+     */
+    fun formatQuantityWithUnit(quantity: Double, unit: String?): String{
+        if (unit.isNullOrBlank()) return NumberUtils.formatAmount(quantity)
+        if (panattoni.simo.domain.MeasurementUnit.isQb(unit)) return "q.b."
+        val formattedQty = NumberUtils.formatAmount(quantity)
+        val displayUnit = formatUnitByQuantity(unit, quantity)
+        return if (displayUnit.isEmpty()) formattedQty else "$formattedQty $displayUnit"
     }
 
     /**

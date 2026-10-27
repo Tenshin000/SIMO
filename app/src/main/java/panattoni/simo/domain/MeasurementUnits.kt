@@ -1,4 +1,4 @@
-﻿package panattoni.simo.domain
+package panattoni.simo.domain
 
 enum class UnitCategory{
     WEIGHT,
@@ -96,13 +96,15 @@ data class MeasurementUnit(
             }
             if (isIntegerUnit(unitCode)){
                 val rounded = roundIntegerAmount(amount)
-                return "$rounded $unitCode"
+                val unitForRounded = panattoni.simo.util.ItalianGrammarUtils.formatUnitByQuantity(unitCode, rounded.toDouble())
+                return "$rounded $unitForRounded"
             }
+            val formattedUnit = panattoni.simo.util.ItalianGrammarUtils.formatUnitByQuantity(unitCode, amount)
             val rounded = Math.round(amount * 10.0) / 10.0
             return if (Math.abs(rounded - Math.round(rounded)) < 0.01){
-                "${Math.round(rounded).toInt()} $unitCode"
+                "${Math.round(rounded).toInt()} $formattedUnit"
             } else{
-                String.format(java.util.Locale.US, "%.1f %s", rounded, unitCode)
+                String.format(java.util.Locale.US, "%.1f %s", rounded, formattedUnit)
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿package panattoni.simo
+package panattoni.simo
 
 import panattoni.simo.util.ItalianGrammarUtils
 import org.junit.Assert.assertEquals
@@ -56,6 +56,60 @@ class ItalianGrammarUtilsTest {
         assertEquals("panini", ItalianGrammarUtils.toPlural("panino"))
         assertEquals("focacce", ItalianGrammarUtils.toPlural("focaccia"))
         assertEquals("croissant", ItalianGrammarUtils.toPlural("croissant"))
+
+        // Idempotency: passare un termine già plurale non deve corromperlo (es. pizze non deve diventare pizzi)
+        assertEquals("pizze", ItalianGrammarUtils.toPlural("pizze"))
+        assertEquals("panini", ItalianGrammarUtils.toPlural("panini"))
+        assertEquals("porzioni", ItalianGrammarUtils.toPlural("porzioni"))
+        assertEquals("cornetti", ItalianGrammarUtils.toPlural("cornetti"))
+        assertEquals("fette", ItalianGrammarUtils.toPlural("fette"))
+        assertEquals("torte", ItalianGrammarUtils.toPlural("torte"))
+    }
+
+    @Test
+    fun testFormatUnitByQuantity(){
+        // Caso "Panino Big Tasty": 1 panino, 2 panini
+        assertEquals("panino", ItalianGrammarUtils.formatUnitByQuantity("panino", 1.0))
+        assertEquals("panini", ItalianGrammarUtils.formatUnitByQuantity("panino", 2.0))
+        assertEquals("panino", ItalianGrammarUtils.formatUnitByQuantity("panini", 1.0))
+        assertEquals("panini", ItalianGrammarUtils.formatUnitByQuantity("panini", 2.0))
+
+        // Caso "Maiale alla Birra": 4 porzioni, 1 porzione
+        assertEquals("porzione", ItalianGrammarUtils.formatUnitByQuantity("porzioni", 1.0))
+        assertEquals("porzioni", ItalianGrammarUtils.formatUnitByQuantity("porzioni", 4.0))
+        assertEquals("porzione", ItalianGrammarUtils.formatUnitByQuantity("porzione", 1.0))
+        assertEquals("porzioni", ItalianGrammarUtils.formatUnitByQuantity("porzione", 4.0))
+
+        // Altri casi culinari
+        assertEquals("pizza", ItalianGrammarUtils.formatUnitByQuantity("pizze", 1.0))
+        assertEquals("pizze", ItalianGrammarUtils.formatUnitByQuantity("pizza", 3.0))
+        assertEquals("uovo", ItalianGrammarUtils.formatUnitByQuantity("uova", 1.0))
+        assertEquals("uova", ItalianGrammarUtils.formatUnitByQuantity("uovo", 2.0))
+        assertEquals("cucchiaio", ItalianGrammarUtils.formatUnitByQuantity("cucchiai", 1.0))
+        assertEquals("cucchiai", ItalianGrammarUtils.formatUnitByQuantity("cucchiaio", 2.0))
+
+        // Unità invariabili
+        assertEquals("g", ItalianGrammarUtils.formatUnitByQuantity("g", 1.0))
+        assertEquals("g", ItalianGrammarUtils.formatUnitByQuantity("g", 500.0))
+        assertEquals("kg", ItalianGrammarUtils.formatUnitByQuantity("kg", 1.0))
+        assertEquals("kg", ItalianGrammarUtils.formatUnitByQuantity("kg", 2.0))
+        assertEquals("ml", ItalianGrammarUtils.formatUnitByQuantity("ml", 1.0))
+        assertEquals("q.b.", ItalianGrammarUtils.formatUnitByQuantity("q.b.", 1.0))
+    }
+
+    @Test
+    fun testFormatQuantityWithUnit(){
+        assertEquals("1 panino", ItalianGrammarUtils.formatQuantityWithUnit(1.0, "panino"))
+        assertEquals("2 panini", ItalianGrammarUtils.formatQuantityWithUnit(2.0, "panino"))
+        assertEquals("1 panino", ItalianGrammarUtils.formatQuantityWithUnit(1.0, "panini"))
+        assertEquals("2 panini", ItalianGrammarUtils.formatQuantityWithUnit(2.0, "panini"))
+
+        assertEquals("1 porzione", ItalianGrammarUtils.formatQuantityWithUnit(1.0, "porzioni"))
+        assertEquals("4 porzioni", ItalianGrammarUtils.formatQuantityWithUnit(4.0, "porzioni"))
+
+        assertEquals("500 g", ItalianGrammarUtils.formatQuantityWithUnit(500.0, "g"))
+        assertEquals("1 g", ItalianGrammarUtils.formatQuantityWithUnit(1.0, "g"))
+        assertEquals("q.b.", ItalianGrammarUtils.formatQuantityWithUnit(1.0, "q.b."))
     }
 
     @Test

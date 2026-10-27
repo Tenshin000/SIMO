@@ -1,4 +1,4 @@
-﻿package panattoni.simo.ui.screens
+package panattoni.simo.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -72,6 +72,7 @@ import panattoni.simo.ui.theme.MacaronSurfaceVariant
 import panattoni.simo.ui.theme.MacaronText
 import panattoni.simo.ui.viewmodel.RecipeDetailViewModel
 import panattoni.simo.util.ItalianGrammarUtils
+import panattoni.simo.util.NumberUtils
 
 /**
  * Schermata di dettaglio e ridimensionamento (scaling) delle ricette.
@@ -160,7 +161,7 @@ fun RecipeDetailScreen(
         topBar ={
             SimoTopBar(
                 title = recipe.name,
-                subtitle = "Resa base: ${recipe.baseYieldQuantity.toInt()} ${recipe.yieldUnit}",
+                subtitle = "Resa base: ${ItalianGrammarUtils.formatQuantityWithUnit(recipe.baseYieldQuantity, recipe.yieldUnit)}",
                 showBackButton = true,
                 onBackClick = onBackClick,
                 actions ={
@@ -337,8 +338,10 @@ fun RecipeDetailScreen(
                                     )
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
+                                val currentYieldQty = NumberUtils.parseDoubleOrNull(uiState.yieldInputValue) ?: tree.targetYieldQuantity
+                                val displayYieldUnit = ItalianGrammarUtils.formatUnitByQuantity(recipe.yieldUnit, currentYieldQty)
                                 Text(
-                                    text = recipe.yieldUnit,
+                                    text = displayYieldUnit,
                                     color = MacaronText,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp

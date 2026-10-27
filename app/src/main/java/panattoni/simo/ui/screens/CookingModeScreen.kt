@@ -93,6 +93,7 @@ import panattoni.simo.service.ActiveKitchenTimer
 import panattoni.simo.service.CookingSessionManager
 import panattoni.simo.ui.theme.MacaronText
 import panattoni.simo.util.CookingTimerExtractor
+import panattoni.simo.util.ItalianGrammarUtils
 import panattoni.simo.util.NumberUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -210,7 +211,7 @@ fun CookingModeScreen(
                                     }
                                 }
                                 Text(
-                                    text = "${tree.recipe.name} (${NumberUtils.formatAmount(tree.targetYieldQuantity)} ${tree.recipe.yieldUnit})",
+                                    text = "${tree.recipe.name} (${ItalianGrammarUtils.formatQuantityWithUnit(tree.targetYieldQuantity, tree.recipe.yieldUnit)})",
                                     fontSize = 12.sp,
                                     color = MacaronSubtleText,
                                     maxLines = 1
@@ -380,7 +381,13 @@ fun CookingModeScreen(
                             val displayQty = if (MeasurementUnit.isQb(unit)){
                                 "q.b."
                             } else{
-                                "${NumberUtils.formatQuantityForUnit(comp.scaledQuantity, unit)} $unit"
+                                val qtyVal = if (MeasurementUnit.isIntegerUnit(unit)){
+                                    MeasurementUnit.roundIntegerAmount(comp.scaledQuantity).toDouble()
+                                } else{
+                                    comp.scaledQuantity
+                                }
+                                val unitStr = ItalianGrammarUtils.formatUnitByQuantity(unit, qtyVal)
+                                "${NumberUtils.formatQuantityForUnit(comp.scaledQuantity, unit)} $unitStr"
                             }
 
                             Surface(
