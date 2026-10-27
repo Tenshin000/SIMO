@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import panattoni.simo.data.model.ScaledComponent
@@ -229,7 +230,12 @@ fun RecipeDetailScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ){
-                            Row(verticalAlignment = Alignment.CenterVertically){
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 8.dp)
+                            ){
                                 Surface(
                                     shape = CircleShape,
                                     color = MacaronSurfaceVariant,
@@ -249,7 +255,9 @@ fun RecipeDetailScreen(
                                     text = "Ricalcolo Dinamico",
                                     color = MacaronText,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
+                                    fontSize = 16.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
 
@@ -264,6 +272,8 @@ fun RecipeDetailScreen(
                                     color = if (uiState.scalingFactor != 1.0) MacaronCard else MacaronPrimary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp,
+                                    maxLines = 1,
+                                    softWrap = false,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
                             }
@@ -389,7 +399,12 @@ fun RecipeDetailScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ){
-                                Row(verticalAlignment = Alignment.CenterVertically){
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(end = 8.dp)
+                                ){
                                     Surface(
                                         shape = CircleShape,
                                         color = Color(0xFFE8F5E9),
@@ -405,17 +420,21 @@ fun RecipeDetailScreen(
                                         }
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
-                                    Column{
+                                    Column(modifier = Modifier.weight(1f, fill = false)){
                                         Text(
                                             text = "Food Cost (Costo Ricetta)",
                                             color = MacaronText,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 16.sp
+                                            fontSize = 15.sp,
+                                            maxLines = 2,
+                                            softWrap = true
                                         )
                                         Text(
                                             text = "Calcolato in tempo reale su dosi e resa",
                                             color = MacaronSubtleText,
-                                            fontSize = 11.sp
+                                            fontSize = 11.sp,
+                                            maxLines = 2,
+                                            softWrap = true
                                         )
                                     }
                                 }
@@ -424,13 +443,27 @@ fun RecipeDetailScreen(
                                     shape = RoundedCornerShape(8.dp),
                                     color = Color(0xFFE8F5E9)
                                 ){
-                                    Text(
-                                        text = "STIMA LIVE",
-                                        color = Color(0xFF2E7D32),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                                    )
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                    ){
+                                        Text(
+                                            text = "STIMA",
+                                            color = Color(0xFF2E7D32),
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
+                                        Text(
+                                            text = "LIVE",
+                                            color = Color(0xFF2E7D32),
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
+                                    }
                                 }
                             }
 
@@ -698,7 +731,12 @@ fun RecipeAllergensCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ){
-                Row(verticalAlignment = Alignment.CenterVertically){
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp)
+                ){
                     Surface(
                         shape = CircleShape,
                         color = if (hasAllergens) Color(0xFFFFF3E0) else Color(0xFFE8F5E9),
@@ -712,17 +750,21 @@ fun RecipeAllergensCard(
                         }
                     }
                     Spacer(modifier = Modifier.width(10.dp))
-                    Column{
+                    Column(modifier = Modifier.weight(1f, fill = false)){
                         Text(
                             text = if (hasAllergens) "Allergeni Presenti (${allergens.size})" else "Allergeni Alimentari",
                             color = MacaronText,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
+                            fontSize = 15.sp,
+                            maxLines = 2,
+                            softWrap = true
                         )
                         Text(
                             text = "Regolamento UE n. 1169/2011",
                             color = MacaronSubtleText,
-                            fontSize = 11.sp
+                            fontSize = 11.sp,
+                            maxLines = 2,
+                            softWrap = true
                         )
                     }
                 }
@@ -736,6 +778,8 @@ fun RecipeAllergensCard(
                         color = if (hasAllergens) Color(0xFFE65100) else Color(0xFF2E7D32),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false,
                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                     )
                 }

@@ -76,6 +76,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import panattoni.simo.data.model.ScaledComponent
@@ -176,7 +177,12 @@ fun CookingModeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ){
-                        Row(verticalAlignment = Alignment.CenterVertically){
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp)
+                        ){
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = MacaronPrimary.copy(alpha = 0.15f),
@@ -187,7 +193,7 @@ fun CookingModeScreen(
                                 }
                             }
                             Spacer(modifier = Modifier.width(10.dp))
-                            Column{
+                            Column(modifier = Modifier.weight(1f, fill = false)){
                                 Row(verticalAlignment = Alignment.CenterVertically){
                                     Text(
                                         text = "Cooking Mode",
@@ -206,6 +212,8 @@ fun CookingModeScreen(
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFF2E7D32),
+                                            maxLines = 1,
+                                            softWrap = false,
                                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                         )
                                     }
@@ -214,7 +222,8 @@ fun CookingModeScreen(
                                     text = "${tree.recipe.name} (${ItalianGrammarUtils.formatQuantityWithUnit(tree.targetYieldQuantity, tree.recipe.yieldUnit)})",
                                     fontSize = 12.sp,
                                     color = MacaronSubtleText,
-                                    maxLines = 1
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }

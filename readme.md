@@ -8,7 +8,7 @@ In questa sezione vengono descritti i requisiti di sistema, le modalità di inst
 * **Sistema Operativo:** Android 8.0 (Oreo, API Level 26) o versioni successive (pienamente testato e compatibile fino ad Android 15 / API Level 35+).
 * **Architettura Dispositivo:** Supporto per architetture ARM64 (aarch64), ARMv7 (armeabi-v7a) e x86_64.
 * **Memoria RAM:** Minimo 2 GB (consigliati 3 GB o superiori per un rendering fluido a 60 FPS di alberi di ricette complessi).
-* **Spazio su Disco:** Circa 25-35 MB per l'installazione dell'applicazione e archiviazione del database locale SQLite (Room).
+* **Spazio su Disco:** Circa 70 MB per l'installazione dell'applicazione e archiviazione del database locale SQLite (Room).
 
 ### Installazione Diretta tramite APK
 L'applicazione viene distribuita direttamente tramite file APK firmati, consentendo l'installazione autonoma senza passare dal Google Play Store:
