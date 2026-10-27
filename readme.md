@@ -29,13 +29,15 @@ L'applicazione viene distribuita direttamente tramite file APK firmati, consente
 ### Differenza tra SIMO-release.apk e SIMO-debug.apk
 All'interno della cartella di distribuzione sono disponibili due varianti del pacchetto:
 
+
 | Proprietà | `SIMO-release.apk` (Consigliato per l'Uso Quotidiano) | `SIMO-debug.apk` (Sviluppo e Debugging) |
-| : | : | : |
+|---|---|---|
 | **Ottimizzazione R8/ProGuard** | **Abilitata:** Codice ottimizzato, minificato, dead-code rimosso e desugaring Java 8+ attivo. | **Disabilitata:** Codice non compresso, conserva i simboli di debug completi. |
 | **Prestazioni di Esecuzione** | Massima velocità di calcolo matematico, rendering Compose nativo fluido a 60 FPS. | Minore fluidità dovuta ai controlli e al tracciamento di debug a runtime. |
-| **Dimensione Pacchetto** | Circa **8 - 12 MB** (snello ed efficiente). | Circa **25 - 35 MB** (più voluminoso). |
+| **Dimensione Pacchetto** | Circa **8–12 MB** (snello ed efficiente). | Circa **25–35 MB** (più voluminoso). |
 | **Firma Digitale** | Keystore ufficiale di produzione con chiave crittografica RSA-2048. | Chiave standard `androiddebugkey` generata dal toolchain Gradle. |
 | **Destinazione** | Dispositivo personale dello chef, postazioni di lavoro, produzione. | Test su emulatore, diagnostica Logcat, ispezione del database con Android Studio. |
+
 
 ### Compilazione dal Codice Sorgente (Per Sviluppatori)
 Se si desidera compilare il progetto partendo dai sorgenti Kotlin:
