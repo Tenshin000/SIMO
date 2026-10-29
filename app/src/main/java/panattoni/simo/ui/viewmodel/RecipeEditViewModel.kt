@@ -205,6 +205,23 @@ class RecipeEditViewModel(
         )
     }
 
+    /**
+     * Armonizza l'unità di prezzo con l'unità di misura per evitare incongruenze
+     * tra massa e volume (es. se la dose è in ml ma il prezzo è al kg, normalizza l'unità di prezzo a 'l' a parità di valore 1:1).
+     */
+    private fun harmonizePriceUnit(unit: String, priceUnit: String?): String?{
+        if (priceUnit.isNullOrBlank()) return priceUnit
+        val cleanUnit = unit.trim().lowercase()
+        val cleanPriceUnit = priceUnit.trim().lowercase()
+        return when{
+            cleanUnit in setOf("ml", "l") && cleanPriceUnit in setOf("kg", "chilogrammi", "chilo", "chili") -> "l"
+            cleanUnit in setOf("ml", "l") && cleanPriceUnit in setOf("g", "grammi", "grammo") -> "ml"
+            cleanUnit in setOf("g", "kg") && cleanPriceUnit in setOf("l", "litri", "litro") -> "kg"
+            cleanUnit in setOf("g", "kg") && cleanPriceUnit in setOf("ml", "millilitri", "millilitro") -> "g"
+            else -> priceUnit
+        }
+    }
+
     fun addComponent(
         item: Item,
         quantity: String,
@@ -240,7 +257,8 @@ class RecipeEditViewModel(
         }
 
         val effectivePrice = pricePerUnit ?: item.pricePerUnit
-        val effectivePriceUnit = priceUnit ?: item.priceUnit
+        val rawPriceUnit = priceUnit ?: item.priceUnit
+        val effectivePriceUnit = harmonizePriceUnit(effectiveUnit, rawPriceUnit)
         val effectiveAllergens = allergens ?: item.allergensList
 
         val newComp = EditableComponent(
@@ -735,11 +753,12 @@ class RecipeEditViewModel(
         for (gemIng in ingredients){
             val key = gemIng.name.trim().lowercase()
             val existingItem = existingAllItems[key]
+            val resolvedPriceUnit = harmonizePriceUnit(gemIng.unit, gemIng.priceUnit)
 
             val targetItem = if (existingItem != null){
                 val updatedItem = existingItem.copy(
                     pricePerUnit = gemIng.pricePerUnit ?: existingItem.pricePerUnit,
-                    priceUnit = gemIng.priceUnit ?: existingItem.priceUnit,
+                    priceUnit = resolvedPriceUnit ?: existingItem.priceUnit,
                     allergens = if (gemIng.allergens.isNotEmpty()) Allergen.formatAllergensString(gemIng.allergens) else existingItem.allergens,
                     caloriesKcal = gemIng.caloriesKcal ?: existingItem.caloriesKcal,
                     carbohydratesG = gemIng.carbohydratesG ?: existingItem.carbohydratesG,
@@ -757,7 +776,7 @@ class RecipeEditViewModel(
                     type = ItemType.RAW_INGREDIENT,
                     defaultUnit = gemIng.unit,
                     pricePerUnit = gemIng.pricePerUnit,
-                    priceUnit = gemIng.priceUnit,
+                    priceUnit = resolvedPriceUnit,
                     allergens = Allergen.formatAllergensString(gemIng.allergens),
                     caloriesKcal = gemIng.caloriesKcal,
                     carbohydratesG = gemIng.carbohydratesG,
@@ -784,7 +803,7 @@ class RecipeEditViewModel(
                     quantity = if (formattedQty.isNotBlank()) formattedQty else newComponents[existingIndex].quantity,
                     unit = gemIng.unit.ifBlank { newComponents[existingIndex].unit },
                     pricePerUnit = gemIng.pricePerUnit ?: newComponents[existingIndex].pricePerUnit,
-                    priceUnit = gemIng.priceUnit ?: newComponents[existingIndex].priceUnit,
+                    priceUnit = resolvedPriceUnit ?: newComponents[existingIndex].priceUnit,
                     allergens = if (gemIng.allergens.isNotEmpty()) gemIng.allergens else newComponents[existingIndex].allergens,
                     caloriesKcal = gemIng.caloriesKcal ?: newComponents[existingIndex].caloriesKcal,
                     carbohydratesG = gemIng.carbohydratesG ?: newComponents[existingIndex].carbohydratesG,
@@ -911,7 +930,8 @@ class RecipeEditViewModel(
                 }
 
                 val finalPrice = comp.pricePerUnit ?: match.pricePerUnit
-                val finalPriceUnit = comp.priceUnit ?: match.priceUnit
+                val rawPriceUnit = comp.priceUnit ?: match.priceUnit
+                val finalPriceUnit = harmonizePriceUnit(finalUnit, rawPriceUnit)
                 val finalAllergens = if (comp.allergens.isNotEmpty()) comp.allergens else match.allergens
 
                 val updatedComp = comp.copy(

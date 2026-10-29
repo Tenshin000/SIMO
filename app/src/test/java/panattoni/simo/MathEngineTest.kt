@@ -1,4 +1,4 @@
-﻿package panattoni.simo
+package panattoni.simo
 
 import panattoni.simo.data.model.Item
 import panattoni.simo.data.model.ItemType
@@ -209,5 +209,62 @@ class MathEngineTest {
         val treeWithSale = MathEngine.buildScaledTree(recipeWithSale, 1.0, emptyMap())
         assertEquals(0.0, treeWithSale.components.first{ it.componentDetail.item.id == "sale" }.componentCost!!, 0.001)
         assertEquals(0.30, treeWithSale.totalCost, 0.001)
+    }
+
+    @Test
+    fun testCrossUnitMassVolumeCostCalculation(){
+        // Caffè espresso: 300 ml con prezzo €25.00/kg -> 300 / 1000 = 0.30 kg * €25 = €7.50 (era €7500.00)
+        val costCaffeMlVsKg = MathEngine.calculateComponentCost(
+            quantity = 300.0,
+            recipeUnit = "ml",
+            pricePerUnit = 25.0,
+            priceUnit = "kg"
+        )
+        assertEquals(7.50, costCaffeMlVsKg!!, 0.001)
+
+        // Viceversa: 300 g con prezzo €25.00/l -> 300 / 1000 = 0.30 l * €25 = €7.50
+        val costCaffeGVsL = MathEngine.calculateComponentCost(
+            quantity = 300.0,
+            recipeUnit = "g",
+            pricePerUnit = 25.0,
+            priceUnit = "l"
+        )
+        assertEquals(7.50, costCaffeGVsL!!, 0.001)
+
+        // 300 ml con prezzo €0.025/g -> 1 ml = 1 g -> 300 * 0.025 = €7.50
+        val costCaffeMlVsG = MathEngine.calculateComponentCost(
+            quantity = 300.0,
+            recipeUnit = "ml",
+            pricePerUnit = 0.025,
+            priceUnit = "g"
+        )
+        assertEquals(7.50, costCaffeMlVsG!!, 0.001)
+
+        // 300 g con prezzo €0.025/ml -> 1 g = 1 ml -> 300 * 0.025 = €7.50
+        val costCaffeGVsMl = MathEngine.calculateComponentCost(
+            quantity = 300.0,
+            recipeUnit = "g",
+            pricePerUnit = 0.025,
+            priceUnit = "ml"
+        )
+        assertEquals(7.50, costCaffeGVsMl!!, 0.001)
+
+        // 1.5 l con prezzo €1.20/kg -> 1.5 kg * €1.20 = €1.80
+        val costLatteLVsKg = MathEngine.calculateComponentCost(
+            quantity = 1.5,
+            recipeUnit = "l",
+            pricePerUnit = 1.20,
+            priceUnit = "kg"
+        )
+        assertEquals(1.80, costLatteLVsKg!!, 0.001)
+
+        // 1.5 kg con prezzo €2.00/l -> 1.5 l * €2.00 = €3.00
+        val costYogurtKgVsL = MathEngine.calculateComponentCost(
+            quantity = 1.5,
+            recipeUnit = "kg",
+            pricePerUnit = 2.00,
+            priceUnit = "l"
+        )
+        assertEquals(3.00, costYogurtKgVsL!!, 0.001)
     }
 }

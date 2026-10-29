@@ -42,6 +42,25 @@ object MathEngine{
      * Calcola il costo in euro per una determinata quantità di ingrediente
      * in base al prezzo unitario configurato (es. €1.20/kg per 250g -> 250/1000 * 1.20 = €0.30).
      */
+    // Insieme delle unità di massa e volume con equivalenza culinaria 1:1 (1g = 1ml, 1kg = 1l)
+    private val MASS_VOLUME_UNITS = setOf(
+        "g", "grammi", "grammo",
+        "kg", "chilogrammi", "chilogrammo", "chili", "chilo",
+        "ml", "millilitri", "millilitro",
+        "l", "litri", "litro"
+    )
+
+    private fun isKiloOrLiter(u: String): Boolean{
+        return u in setOf("kg", "chilogrammi", "chilogrammo", "chili", "chilo", "l", "litri", "litro")
+    }
+
+    /**
+     * Calcola il costo di un componente gestendo in modo rigoroso le equivalenze tra unità.
+     * In cucina vale l'equivalenza standard 1:1 tra massa e volume per densità vicina all'acqua:
+     * - 1 g = 1 ml
+     * - 1 kg = 1 l (e 1 kg/l = 1000 g/ml)
+     * Il prezzo al kg o al litro corrisponde a 1/1000 per g o ml (es. 25 €/kg su 300 ml = 0.025 €/ml * 300 = 7.50 €).
+     */
     fun calculateComponentCost(
         quantity: Double,
         recipeUnit: String,
@@ -60,51 +79,38 @@ object MathEngine{
             return quantity * pricePerUnit
         }
 
-        // 2. Peso: g vs kg
-        if (rUnit == "g" && pUnit == "kg"){
-            return (quantity / 1000.0) * pricePerUnit
-        }
-        if (rUnit == "kg" && pUnit == "g"){
-            return (quantity * 1000.0) * pricePerUnit
-        }
-
-        // 3. Volume: ml vs l
-        if (rUnit == "ml" && pUnit == "l"){
-            return (quantity / 1000.0) * pricePerUnit
-        }
-        if (rUnit == "l" && pUnit == "ml"){
-            return (quantity * 1000.0) * pricePerUnit
+        // 2. Conversioni dirette e incrociate tra massa e volume (g, kg, ml, l)
+        // Corrispondenza 1 a 1: 1 g = 1 ml, 1 kg = 1 l; 1 kg/l = 1000 g/ml
+        if (rUnit in MASS_VOLUME_UNITS && pUnit in MASS_VOLUME_UNITS){
+            val quantityInBase = if (isKiloOrLiter(rUnit)) quantity * 1000.0 else quantity
+            val pricePerBase = if (isKiloOrLiter(pUnit)) pricePerUnit / 1000.0 else pricePerUnit
+            return quantityInBase * pricePerBase
         }
 
-        // 4. Se il prezzo è per kg/g ma l'ingrediente è in unità/pz ed ha gramsPerUnit definito
-        val isRUnitDiscrete = MeasurementUnit.isIntegerUnit(rUnit) || rUnit == "unità" || rUnit == "unita" || rUnit == "pz"
-        if (isRUnitDiscrete && gramsPerUnit != null && gramsPerUnit > 0.0){
-            val totalGrams = quantity * gramsPerUnit
-            if (pUnit == "kg"){
-                return (totalGrams / 1000.0) * pricePerUnit
-            }
-            if (pUnit == "g"){
-                return totalGrams * pricePerUnit
-            }
+        // 3. Misure culinarie approssimate (cucchiai, cucchiaini, pizzichi) su prezzo a peso o volume
+        val approxGrams = when (rUnit){
+            "cucchiaio", "cucchiai" -> 15.0
+            "cucchiaino", "cucchiaini" -> 5.0
+            "pizzico", "pizzichi" -> 1.0
+            else -> null
+        }
+        if (approxGrams != null && pUnit in MASS_VOLUME_UNITS){
+            val quantityInBase = quantity * approxGrams
+            val pricePerBase = if (isKiloOrLiter(pUnit)) pricePerUnit / 1000.0 else pricePerUnit
+            return quantityInBase * pricePerBase
+        }
+
+        // 4. Se l'ingrediente è in unità/pz ed ha gramsPerUnit definito con prezzo a peso o volume
+        val isRUnitDiscrete = MeasurementUnit.isIntegerUnit(rUnit) || rUnit in DISCRETE_CODES
+        if (isRUnitDiscrete && gramsPerUnit != null && gramsPerUnit > 0.0 && pUnit in MASS_VOLUME_UNITS){
+            val quantityInBase = quantity * gramsPerUnit
+            val pricePerBase = if (isKiloOrLiter(pUnit)) pricePerUnit / 1000.0 else pricePerUnit
+            return quantityInBase * pricePerBase
         }
 
         // 5. Unità discrete equivalenti (es. unità, pz)
         if (rUnit in DISCRETE_CODES && pUnit in DISCRETE_CODES){
             return quantity * pricePerUnit
-        }
-
-        // 6. Cucchiai / cucchiaini / pizzichi: peso approssimativo comune
-        if (pUnit == "kg" || pUnit == "g"){
-            val approxGrams = when (rUnit){
-                "cucchiaio", "cucchiai" -> 15.0
-                "cucchiaino", "cucchiaini" -> 5.0
-                "pizzico", "pizzichi" -> 1.0
-                else -> null
-            }
-            if (approxGrams != null){
-                val totalGrams = quantity * approxGrams
-                return if (pUnit == "kg") (totalGrams / 1000.0) * pricePerUnit else totalGrams * pricePerUnit
-            }
         }
 
         // Default proporzione diretta se non convertibile

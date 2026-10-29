@@ -101,9 +101,10 @@ class GeminiRecipeService{
                - Usa grammature realistiche, tonde e calibrate (per grammi 'g' e millilitri 'ml' preferisci multipli di 5 o 10).
                - Per ingredienti discreti usa 'unità' o 'pz' con numeri interi (es. 2 unità).
                - Non usare dosi impossibili.
-            2. FOOD COST (Costi unitari di mercato in Italia):
+            2. FOOD COST E COERENZA UNITÀ DI PREZZO:
                - Assegna a ogni ingrediente un prezzo unitario realistico di mercato italiano (es. Farina 1.10-1.40 €/kg, Burro 8.00-10.00 €/kg, Latte 1.20-1.50 €/l, Uova 0.30 €/unità, Olio EVO 9.00-12.00 €/l).
                - L'unità di prezzo ('priceUnit') deve essere una tra: "kg", "g", "l", "ml", "unità", "pz".
+               - COERENZA RIGOROSA: Per i liquidi dosati in 'ml' o 'l' (latte, acqua, caffè, succhi, olio, panna) usa TASSATIVAMENTE 'l' come 'priceUnit' (es. 1.20 €/l). Non usare mai 'kg' per liquidi o bevande dosate in millilitri! Per farine e solidi in 'g' o 'kg' usa 'kg'. Per discreti usa 'unità' o 'pz'.
             3. I 14 ALLERGENI UFFICIALI UE (Regolamento UE 1169/2011):
                Per ogni ingrediente identifica con precisione estrema se contiene uno o più dei 14 allergeni ufficiali.
                Puoi usare ESCLUSIVAMENTE questi ID testuali esatti:
