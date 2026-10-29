@@ -1,4 +1,4 @@
-# SIMO 2.0 – Manuale Tecnico e Architettura di Sistema
+# SIMO – Manuale Tecnico e Architettura di Sistema
 
 > **Scalable Ingredient Management Organizer (SIMO)**  
 > *Versione 2.0.0 (Ottobre 2026)* – Android SDK 26–35+ (Kotlin 2.0 / Jetpack Compose M3)  
@@ -28,7 +28,7 @@ Nei moderni processi di preparazione culinaria professionale, alta pasticceria e
 
 ## 2. Architettura del Software e Pattern Architetturali
 
-SIMO 2.0 adotta una combinazione rigorosa di **Clean Architecture** e **Model-View-ViewModel (MVVM)**, orchestrata mediante il pattern **Unidirectional Data Flow (UDF)** di Jetpack Compose.
+SIMO adotta una combinazione rigorosa di **Clean Architecture** e **Model-View-ViewModel (MVVM)**, orchestrata mediante il pattern **Unidirectional Data Flow (UDF)** di Jetpack Compose.
 
 ```mermaid
 graph TD
@@ -160,7 +160,7 @@ data class EditableComponent(
 
 ## 5. Integrazione Cloud AI: Dual-Engine Google Gemini & OpenAI ChatGPT
 
-SIMO 2.0 offre un'architettura modulare bivalente per l'assistenza culinaria generativa (`GeminiRecipeService.kt` e `OpenAiRecipeService.kt`), gestita dall'enum `AiProvider`.
+SIMO offre un'architettura modulare bivalente per l'assistenza culinaria generativa (`GeminiRecipeService.kt` e `OpenAiRecipeService.kt`), gestita dall'enum `AiProvider`.
 
 ### 5.1 Preservazione Intelligente dell'Unità di Resa (`yieldUnit`)
 Nel caso in cui l'utente indichi un'unità di misura personalizzata della resa (es. *torta*, *bicchieri*, *panini*, *fette*, *crostate*), il prompt di sistema vincola il modello mediante validazione gastronomica:
@@ -251,7 +251,7 @@ La struttura di esportazione in formato JSON v2 supporta la persistenza completa
 
 ## 8. Testing, Validazione e Qualità del Codice
 
-La qualità e l'integrità matematica di SIMO 2.0 sono garantite da una suite estesa di **59 test unitari automatizzati** eseguiti su host JVM:
+La qualità e l'integrità matematica di SIMO sono garantite da una suite estesa di **59 test unitari automatizzati** eseguiti su host JVM:
 
 | Suite di Test | N. Test | Obiettivo di Validazione |
 |---|---|---|

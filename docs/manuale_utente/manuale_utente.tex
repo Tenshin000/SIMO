@@ -41,7 +41,7 @@
 % --- Stile Testate e Pi\`e di Pagina ---
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small\textbf{\color{simoPink}SIMO 2.0} \textendash{} Manuale d'Istruzioni per l'Utente}
+\fancyhead[L]{\small\textbf{\color{simoPink}SIMO} \textendash{} Manuale d'Istruzioni per l'Utente}
 \fancyhead[R]{\small\color{simoSubtle}\nouppercase{\leftmark}}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -107,7 +107,8 @@
     \centering
     \vspace*{1.2cm}
     
-    {\Huge \bfseries \color{simoPink} SIMO 2.0}\\[0.3cm]
+    {\Huge \bfseries \color{simoPink} SIMO}\\[0.2cm]
+    {\large \bfseries \color{simoText} Versione 2.0}\\[0.3cm]
     {\large \bfseries \color{simoDarkPink} Scalable Ingredient Management Organizer}\\[0.8cm]
     
     {\color{simoBorder}\rule{0.75\textwidth}{1.5pt}}\\[1.0cm]
@@ -149,13 +150,12 @@
 % ==============================================================================
 % SEZIONE 1: INTRODUZIONE
 % ==============================================================================
-\section{Benvenuti in SIMO 2.0}
-
-\textbf{SIMO} (\textit{Scalable Ingredient Management Organizer}) nasce per rispondere in modo scientifico, elegante ed intuitivo a un'esigenza fondamentale di chiunque operi in cucina, in pasticceria o in un laboratorio artigianale: \textbf{il calcolo proporzionale e analitico delle dosi, delle rese e dei costi}.
+\section{Benvenuti in SIMO}
+\textbf{Scalable Ingredient Management Organizer} (\textbf{SIMO}) nasce per rispondere in modo scientifico, elegante ed intuitivo a un'esigenza fondamentale di chiunque operi in cucina, in pasticceria o in un laboratorio artigianale: \textbf{il calcolo proporzionale e analitico delle dosi, delle rese e dei costi}.
 
 Spesso i ricettari tradizionali presentano formulazioni calibrate su dosi fisse (ad esempio una torta per 8 persone o un impasto per 500\,g di farina), ma le reali esigenze produttive sono mutevoli: un banchetto con 45 invitati, una fornitura di 80 cornetti, oppure una dispensa in cui sono rimasti solo 130\,g di burro o 2 uova. Inoltre, la moderna legislazione alimentare europea (Regolamento UE 1169/2011) impone una trasparenza rigorosa sia sugli \textbf{allergeni} sia sulla \textbf{dichiarazione nutrizionale} obbligatoria dei prodotti finiti.
 
-\begin{simobox}{Le Caratteristiche e Innovazioni di SIMO 2.0}
+\begin{simobox}{Feature di SIMO}
 SIMO non \`e un semplice taccuino di appunti, bens\`i un sofisticato \textbf{motore matematico e relazionale a grafo (DAG)}:
 \begin{itemize}[leftmargin=*,noitemsep]
     \item \textbf{Ricalcolo Dinamico Diretto (Scaling):} Modifichi la resa (es. porzioni, pezzi, grammi) e tutti gli ingredienti si aggiornano istantaneamente con precisione decimale.
@@ -177,15 +177,16 @@ SIMO non \`e un semplice taccuino di appunti, bens\`i un sofisticato \textbf{mot
 % SEZIONE 2: ESPLORARE IL RICETTARIO E LA SCHERMATA HOME
 % ==============================================================================
 \section{Esplorare il Ricettario e la Schermata Home}
-
 All'avvio dell'applicazione verrai accolto dalla schermata principale (Figura~\ref{fig:home}), disegnata secondo una palette di colori pastello morbidi (\textit{Soft Macaron}) che garantisce un contrasto ideale sia alla luce naturale del laboratorio sia in ambienti di cottura. Grazie al motore di pre-caricamento asincrono immediato, l'intero ricettario viene popolato istantaneamente, eliminando qualsiasi schermata bianca transitoria.
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=0.48\textwidth]{images/screen_optimized_home.png}
-    \caption{Schermata Principale di SIMO 2.0: elenco delle ricette con badge di categoria, resa base, calo cottura e barra di navigazione superiore.}
+    \caption{Schermata Principale di SIMO: elenco delle ricette con badge di categoria, resa base, calo cottura e barra di navigazione superiore.}
     \label{fig:home}
 \end{figure}
+
+\newpage
 
 \subsection{Comprendere la Scheda di ciascuna Ricetta}
 Ogni elemento del ricettario mostra a colpo d'occhio i dati fondamentali:
@@ -212,7 +213,7 @@ Nella barra superiore (\textit{Top Bar}) trovi tutti gli strumenti per gestire i
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.44\textwidth]{images/sort_menu_open.png}
+    \includegraphics[width=0.22\textwidth]{images/sort_menu_open.png}
     \caption{Menu di ordinamento rapido e filtri visuali.}
     \label{fig:sort}
 \end{figure}
@@ -223,8 +224,7 @@ Nella barra superiore (\textit{Top Bar}) trovi tutti gli strumenti per gestire i
 % SEZIONE 3: CREAZIONE E MODIFICA RICETTE CON NUTRIZIONE E COTTURA
 % ==============================================================================
 \section{Creazione e Modifica delle Ricette}
-
-SIMO 2.0 offre un ambiente di redazione avanzato (Figura~\ref{fig:edit}), accessibile tramite il pulsante circolare \textbf{[+]} nella schermata principale oppure toccando la \textbf{Matita} su una ricetta esistente.
+SIMO offre un ambiente di redazione avanzato (Figura~\ref{fig:edit}), accessibile tramite il pulsante circolare \textbf{[+]} nella schermata principale oppure toccando la \textbf{Matita} su una ricetta esistente.
 
 \begin{figure}[h!]
     \centering
@@ -239,7 +239,7 @@ Nella prima sezione della scheda \`e possibile impostare:
     \item \textbf{Nome della Ricetta:} Titolo formale della preparazione.
     \item \textbf{Categoria e Tag:} Selezione rapida tra i tag ufficiali (compreso \textit{Panini}) o inserimento di una categoria personalizzata.
     \item \textbf{Resa Base e Unit\`a di Resa:} La quantit\`a di riferimento (es. \textit{4 porzioni}, \textit{1 torta}, \textit{2 bicchieri}, \textit{6 panini}).
-    \item \textbf{Modificatore Peso in Cottura (\%):} Campo fondamentale introdotto in SIMO 2.0. Permette di registrare la percentuale di variazione della massa durante il trattamento termico:
+    \item \textbf{Modificatore Peso in Cottura (\%):} Campo fondamentale introdotto nella versione 2.0. Permette di registrare la percentuale di variazione della massa durante il trattamento termico:
     \begin{itemize}[noitemsep]
         \item \textbf{Valori Negativi (Calo Peso):} Es. \texttt{-10\%} per torte e crostate, \texttt{-15\%} per arrosti o \texttt{-8\%} per creme da pasticceria che perdono acqua per evaporazione in forno o sul fornello.
         \item \textbf{Valori Positivi (Resa/Aumento di Massa):} Es. \texttt{+120\%} per pasta secca o riso che assorbono liquidi durante la bollitura raddoppiando o triplicando il proprio peso iniziale.
@@ -410,7 +410,7 @@ Accessibile dal menu superiore o direttamente dal dettaglio ricetta tramite il t
 \section{Assistente Chef AI, Stampa PDF Multipagina e Backup}
 
 \subsection{Assistente Chef AI Bivalente (Gemini \& ChatGPT)}
-SIMO 2.0 integra nativamente due motori di intelligenza artificiale di livello mondiale: \textbf{Google Gemini} e \textbf{OpenAI ChatGPT} (Figura~\ref{fig:ai_dialog}).
+SIMO integra nativamente due motori di intelligenza artificiale di livello mondiale: \textbf{Google Gemini} e \textbf{OpenAI ChatGPT} (Figura~\ref{fig:ai_dialog}).
 
 \begin{figure}[h!]
     \centering

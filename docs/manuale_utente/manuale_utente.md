@@ -1,4 +1,4 @@
-# SIMO 2.0 – Manuale d'Istruzioni e Guida all'Uso
+# SIMO – Manuale d'Istruzioni e Guida all'Uso
 
 > **Scalable Ingredient Management Organizer (SIMO)**  
 > *Versione 2.0 (Release Ufficiale)* – Sistema Operativo Android (API Level 26–35+)  
@@ -6,13 +6,13 @@
 
 ---
 
-## 1. Benvenuti in SIMO 2.0
+## 1. Benvenuti in SIMO
 
 **SIMO** (*Scalable Ingredient Management Organizer*) nasce per rispondere in modo scientifico, elegante ed intuitivo a un'esigenza fondamentale di chiunque operi in cucina, in pasticceria o in un laboratorio artigianale: **il calcolo proporzionale e analitico delle dosi, delle rese e dei costi**.
 
 Spesso i ricettari tradizionali presentano formulazioni calibrate su dosi fisse (ad esempio una torta per 8 persone o un impasto per 500 g di farina), ma le reali esigenze produttive sono mutevoli: un banchetto con 45 invitati, una fornitura di 80 cornetti, oppure una dispensa in cui sono rimasti solo 130 g di burro o 2 uova. Inoltre, la moderna legislazione alimentare europea (Regolamento UE 1169/2011) impone una trasparenza rigorosa sia sugli **allergeni** sia sulla **dichiarazione nutrizionale** obbligatoria dei prodotti finiti.
 
-### Le Caratteristiche e Innovazioni di SIMO 2.0
+### Le Caratteristiche e Innovazioni di SIMO
 SIMO non è un semplice taccuino di appunti, bensì un sofisticato **motore matematico e relazionale a grafo (DAG)**:
 * **Ricalcolo Dinamico Diretto (Scaling):** Modifichi la resa (es. porzioni, pezzi, grammi) e tutti gli ingredienti si aggiornano istantaneamente con precisione decimale.
 * **Modificatore Peso e Resa in Cottura:** Imposti la variazione di peso subita durante la cottura (calo peso negativo per evaporazione nel forno come per torte e carni, oppure aumento di massa positivo per assorbimento d'acqua come per pasta e riso).
@@ -31,7 +31,7 @@ SIMO non è un semplice taccuino di appunti, bensì un sofisticato **motore mate
 
 All'avvio dell'applicazione verrai accolto dalla schermata principale, disegnata secondo una palette di colori pastello morbidi (*Soft Macaron*) che garantisce un contrasto ideale sia alla luce naturale del laboratorio sia in ambienti di cottura. Grazie al motore di pre-caricamento asincrono immediato, l'intero ricettario viene popolato istantaneamente, eliminando qualsiasi schermata bianca transitoria.
 
-![Schermata Principale di SIMO 2.0](images/screen_optimized_home.png)
+![Schermata Principale di SIMO](images/screen_optimized_home.png)
 
 ### 2.1 Comprendere la Scheda di ciascuna Ricetta
 Ogni elemento del ricettario mostra a colpo d'occhio i dati fondamentali:
@@ -56,7 +56,7 @@ Nella barra superiore (*Top Bar*) trovi tutti gli strumenti per gestire il catal
 
 ## 3. Creazione e Modifica delle Ricette
 
-SIMO 2.0 offre un ambiente di redazione avanzato, accessibile tramite il pulsante circolare **[+]** nella schermata principale oppure toccando la **Matita** su una ricetta esistente.
+SIMO offre un ambiente di redazione avanzato, accessibile tramite il pulsante circolare **[+]** nella schermata principale oppure toccando la **Matita** su una ricetta esistente.
 
 ![Schermata di Modifica Ricetta](images/screen_recipe_edit.png)
 
@@ -65,7 +65,7 @@ Nella prima sezione della scheda è possibile impostare:
 * **Nome della Ricetta:** Titolo formale della preparazione.
 * **Categoria e Tag:** Selezione rapida tra i tag ufficiali (compreso *Panini*) o inserimento di una categoria personalizzata.
 * **Resa Base e Unità di Resa:** La quantità di riferimento (es. *4 porzioni*, *1 torta*, *2 bicchieri*, *6 panini*).
-* **Modificatore Peso in Cottura (%):** Campo fondamentale introdotto in SIMO 2.0. Permette di registrare la percentuale di variazione della massa durante il trattamento termico:
+* **Modificatore Peso in Cottura (%):** Campo fondamentale introdotto nella versione 2.0. Permette di registrare la percentuale di variazione della massa durante il trattamento termico:
   * **Valori Negativi (Calo Peso):** Es. `-10%` per torte e crostate, `-15%` per arrosti o `-8%` per creme da pasticceria che perdono acqua per evaporazione in forno o sul fornello.
   * **Valori Positivi (Resa/Aumento di Massa):** Es. `+120%` per pasta secca o riso che assorbono liquidi durante la bollitura raddoppiando o triplicando il proprio peso iniziale.
   * **Valore Neutro (0%):** Per preparazioni a crudo, cocktail o piatti freddi senza variazione ponderale.
@@ -164,7 +164,7 @@ Accessibile dal menu superiore o direttamente dal dettaglio ricetta tramite il t
 ## 8. Assistente Chef AI, Stampa PDF Multipagina e Backup
 
 ### 8.1 Assistente Chef AI Bivalente (Gemini & ChatGPT)
-SIMO 2.0 integra nativamente due motori di intelligenza artificiale: **Google Gemini** e **OpenAI ChatGPT**.
+SIMO integra nativamente due motori di intelligenza artificiale: **Google Gemini** e **OpenAI ChatGPT**.
 
 ![Finestra dell'Assistente AI](images/screen_gemini_assistant_dialog.png)
 

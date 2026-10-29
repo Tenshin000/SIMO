@@ -41,7 +41,7 @@
 % --- Configurazione Intestazioni e Pi\`e di Pagina ---
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small\textbf{\color{techNavy}SIMO 2.0 Architecture Manual}}
+\fancyhead[L]{\small\textbf{\color{techNavy}SIMO Architecture Manual}}
 \fancyhead[R]{\small\color{techSlate}\nouppercase{\leftmark}}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.5pt}
@@ -128,7 +128,8 @@
     \centering
     \vspace*{1.5cm}
     
-    {\Huge \bfseries \color{techNavy} SIMO 2.0}\\[0.4cm]
+    {\Huge \bfseries \color{techNavy} SIMO}\\[0.2cm]
+    {\large \bfseries \color{techNavy} Versione 2.0}\\[0.4cm]
     {\LARGE \bfseries \color{techBlue} Scalable Ingredient Management Organizer}\\[0.6cm]
     {\large \color{techSlate} Specifica Tecnica, Architettura di Sistema \& Modello Matematico}\\[1.2cm]
     
@@ -198,12 +199,12 @@ Nei moderni processi di preparazione culinaria professionale, alta pasticceria e
 % ==============================================================================
 \section{Architettura del Software e Pattern Architetturali}
 
-SIMO 2.0 adotta una rigorosa combinazione di \textbf{Clean Architecture} e \textbf{Model-View-ViewModel (MVVM)}, orchestrata mediante il pattern \textbf{Unidirectional Data Flow (UDF)} di Jetpack Compose.
+SIMO adotta una rigorosa combinazione di \textbf{Clean Architecture} e \textbf{Model-View-ViewModel (MVVM)}, orchestrata mediante il pattern \textbf{Unidirectional Data Flow (UDF)} di Jetpack Compose.
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=0.48\textwidth]{images/screen_optimized_home.png}
-    \caption{Schermata Home di SIMO 2.0: reattivit\`a dello stato Compose con warm-up asincrono immediato.}
+    \caption{Schermata Home di SIMO: reattivit\`a dello stato Compose con warm-up asincrono immediato.}
     \label{fig:arch_home}
 \end{figure}
 
@@ -363,7 +364,7 @@ data class EditableComponent(
 % ==============================================================================
 \section{Integrazione Cloud AI: Dual-Engine Google Gemini \& OpenAI ChatGPT}
 
-SIMO 2.0 offre un'architettura modulare bivalente per l'assistenza culinaria generativa (`GeminiRecipeService.kt` e `OpenAiRecipeService.kt`), gestita dall'enum `AiProvider`.
+SIMO offre un'architettura modulare bivalente per l'assistenza culinaria generativa (`GeminiRecipeService.kt` e `OpenAiRecipeService.kt`), gestita dall'enum `AiProvider`.
 
 \subsection{Preservazione Intelligente dell'Unit\`a di Resa (\texttt{yieldUnit})}
 Nel caso in cui l'utente indichi un'unit\`a di misura personalizzata della resa (es. \textit{torta}, \textit{bicchieri}, \textit{panini}, \textit{fette}, \textit{crostate}), il prompt di sistema vincola il modello mediante validazione gastronomica:
@@ -478,7 +479,7 @@ Il motore `BackupManager.kt` riconosce automaticamente la versione del documento
 % ==============================================================================
 \section{Testing, Validazione e Qualit\`a del Codice}
 
-La qualit\`a e l'integrit\`a matematica di SIMO 2.0 sono garantite da una suite estesa di \textbf{59 test unitari automatizzati} eseguiti su host JVM:
+La qualit\`a e l'integrit\`a matematica di SIMO sono garantite da una suite estesa di \textbf{59 test unitari automatizzati} eseguiti su host JVM:
 
 \begin{table}[h!]
 \centering
@@ -501,10 +502,10 @@ La qualit\`a e l'integrit\`a matematica di SIMO 2.0 sono garantite da una suite 
 \texttt{CookingTimerExtractorTest} & 2 test & Riconoscimento regex dei timer di cottura e durate composte. \\
 \bottomrule
 \end{tabularx}
-\caption{Riepilogo delle 12 suite di test automatizzate in SIMO 2.0 (59 test complessivi).}
+\caption{Riepilogo delle 12 suite di test automatizzate in SIMO (59 test complessivi).}
 \end{table}
 
 \section{Conclusioni e Sintesi della Release 2.0}
-L'architettura SIMO 2.0 consolida il motore di calcolo proporzionale introducendo la fisica termica della cottura (\textit{cooking weight modifier}), la conformit\`a al Regolamento UE 1169/2011 per le etichette nutrizionali, il supporto bivalente AI (Gemini \& OpenAI) con preservazione semantica dell'unit\`a di resa, la nuova categoria \textit{Panini} e la generazione documentale A4 multipagina con contrasto assoluto.
+L'architettura di SIMO consolida il motore di calcolo proporzionale introducendo la fisica termica della cottura (\textit{cooking weight modifier}), la conformit\`a al Regolamento UE 1169/2011 per le etichette nutrizionali, il supporto bivalente AI (Gemini \& OpenAI) con preservazione semantica dell'unit\`a di resa, la nuova categoria \textit{Panini} e la generazione documentale A4 multipagina con contrasto assoluto.
 
 \end{document}
