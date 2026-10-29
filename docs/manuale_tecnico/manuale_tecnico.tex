@@ -59,7 +59,7 @@
 \lstdefinelanguage{Kotlin}{
   keywords={package, import, class, object, interface, fun, val, var, data, sealed, override, companion, private, public, protected, suspend, return, if, else, when, while, for, in, is, null, true, false, try, catch, finally, throw, this, super, by},
   keywordstyle=\color{techNavy}\bfseries,
-  ndkeywords={Int, Double, String, Boolean, Long, Float, List, Map, Set, Flow, StateFlow, MutableStateFlow, Recipe, Item, ScaledRecipeTree, ScaledComponent, Allergen, ItemEntity, RecipeEntity, NutritionProfile, RecipeNutritionSummary},
+  ndkeywords={Int, Double, String, Boolean, Long, Float, List, Map, Set, Flow, StateFlow, MutableStateFlow, Recipe, Item, ScaledRecipeTree, ScaledComponent, Allergen, ItemEntity, RecipeEntity},
   ndkeywordstyle=\color{techBlue}\bfseries,
   sensitive=true,
   comment=[l]{//},
@@ -107,10 +107,10 @@
     left=3mm, right=3mm, top=2mm, bottom=2mm
 }
 
-\newtcolorbox{safetybox}[1][Garanzia di Sicurezza]{
+\newtcolorbox{secbox}[1][Vincolo di Sicurezza]{
     enhanced,
-    colback=techGreen!8,
-    colframe=techGreen,
+    colback=techRed!6,
+    colframe=techRed,
     coltitle=white,
     fonttitle=\bfseries,
     title=#1,
@@ -119,195 +119,402 @@
     left=3mm, right=3mm, top=2mm, bottom=2mm
 }
 
-\begin{document}
+\raggedbottom
 
+\hyphenpenalty=10000
+
+\begin{document}
 % ==============================================================================
-% COPERTINA
+% COPERTINA FORMALE
 % ==============================================================================
 \begin{titlepage}
     \centering
-    \vspace*{1.5cm}
+    \vspace*{1cm}
     
-    {\Huge \bfseries \color{techNavy} SIMO}\\[0.2cm]
-    {\large \bfseries \color{techNavy} Versione 2.0}\\[0.4cm]
-    {\LARGE \bfseries \color{techBlue} Scalable Ingredient Management Organizer}\\[0.6cm]
-    {\large \color{techSlate} Specifica Tecnica, Architettura di Sistema \& Modello Matematico}\\[1.2cm]
+    {\Huge \bfseries \color{techNavy} S\,I\,M\,O}\\[0.3cm]
+    {\LARGE \bfseries \color{techBlue} Scalable Ingredient Management Organizer}\\[0.3cm]
+    {\large \bfseries \color{techNavy} Versione 2.0}\\[0.8cm]
     
-    {\color{techBorder}\rule{0.8\textwidth}{1.5pt}}\\[1.5cm]
+    {\color{techBorder}\rule{0.85\textwidth}{1.5pt}}\\[1.2cm]
+    
+    {\LARGE \bfseries Specifiche di Progettazione Software, Modello Matematico e Architettura dei Sottosistemi}\\[0.5cm]
+    {\large Manuale di Riferimento per Ingegneri del Software, Architetti di Sistema e Addetti ai Lavori}\\[2.2cm]
     
     \begin{tcolorbox}[
         enhanced,
         colback=techLightBg,
         colframe=techNavy,
-        arc=3mm,
+        arc=4mm,
         width=0.85\textwidth,
-        halign=center,
-        boxrule=1pt,
-        drop shadow=techNavy!20
+        boxrule=1.2pt
     ]
-        \vspace{0.3cm}
-        \textbf{\color{techNavy} Versione Documento:} 2.0.0 (Ottobre 2026)\\[0.2cm]
-        \textbf{\color{techSlate} Target Framework:} Android SDK 26--35 (Kotlin 2.0 / Compose M3)\\[0.2cm]
-        \textbf{\color{techSlate} Modello di Calcolo:} DAG Pesato, Resa in Cottura, Valori Nutrizionali UE\\[0.2cm]
-        \textbf{\color{techSlate} Cloud AI Engine:} Dual Provider (Google Gemini v1beta \& OpenAI Chat Completions)\\[0.2cm]
-        \textbf{\color{techSlate} Motore Documentale:} Vectorial Multi-Page PDF Engine (\textit{ISO 216 A4})\\[0.3cm]
+        \centering
+        \vspace{0.2cm}
+        \textbf{\color{techNavy} Stack Tecnologico Primario}\\[0.15cm]
+        Kotlin 2.0 \textbullet{} Android SDK (API 24--37) \textbullet{} Jetpack Compose (Material 3)\\[0.1cm]
+        Android Room (SQLite) \textbullet{} Kotlin Coroutines \& Reactive StateFlow\\[0.1cm]
+        AndroidKeyStore Hardware-Backed Crypto (AES-256 GCM)\\[0.1cm]
+        Dual-Engine Cloud AI (Google Gemini v1beta \& OpenAI ChatGPT API)\\[0.1cm]
+        Multi-Page Vectorial PDF Engine (ISO 216 A4) \textbullet{} Resa Termica \& Nutrizione UE\\[0.2cm]
     \end{tcolorbox}
     
     \vfill
     
-    {\small \color{techSlate} Ingegneria del Software, Progettazione Algoritmica e Certificazione di Qualit\`a\\
-    Sviluppato da: \textbf{Francesco Panattoni}\\
-    \today}
-    \vspace*{1cm}
+    \begin{tabularx}{0.85\textwidth}{lXr}
+        \textbf{Document ID:} & SIMO-ENG-SPEC-2026-V2 & \textbf{Stato:} Release Ufficiale v2.0 \\
+        \textbf{Autore:} & Francesco Panattoni & \textbf{Data:} \today \\
+    \end{tabularx}
+    \vspace*{0.5cm}
 \end{titlepage}
 
 % ==============================================================================
-% INDICE
+% INDICI
 % ==============================================================================
 \tableofcontents
 \newpage
 
 % ==============================================================================
-% SEZIONE 1: INTRODUZIONE E REQUISITI
+% SEZIONE 1: INTRODUZIONE ED OBIETTIVI DI SISTEMA
 % ==============================================================================
 \section{Introduzione}
-
 \subsection{Problem Statement \& Contesto di Dominio}
-Nei moderni processi di preparazione culinaria professionale, alta pasticceria e panificazione artigianale, la modellazione e la gestione computazionale delle ricette eccedono largamente le capacit\`a dei sistemi tabellari tradizionali:
+Nei moderni processi di preparazione culinaria professionale e di alta pasticceria, la gestione delle ricette presenta una complessit\`a computazionale e strutturale che eccede ampiamente le capacit\`a di un semplice archivio testuale o tabellare.
+
+I requisiti critici individuati sul campo evidenziano le seguenti problematiche:
 \begin{enumerate}[leftmargin=*]
-    \item \textbf{Gerarchie Multi-Livello (Composite Recipes):} Le ricette composte non sono elenchi piatti di materie prime, bens\`i aggregati strutturati di sotto-ricette intermedie. Qualsiasi modifica alla composizione o alla resa base di una preparazione intermedia deve propagarsi deterministicamente all'intero grafo orientato di composizione.
-    \item \textbf{Modellazione Termica e Resa in Cottura:} Le preparazioni subiscono variazioni di massa in cottura: calo peso per evaporazione termica nei prodotti da forno e carni, oppure aumento di massa per assorbimento liquido in pasta e riso. Tale variazione condiziona sia la resa finale sia la concentrazione di nutrienti per 100\,g.
-    \item \textbf{Dichiarazione Nutrizionale Normativa UE (Regolamento UE 1169/2011):} Obbligo di quantificare accuratamente i valori nutrizionali medi (Energia kJ/kcal, Grassi, Carboidrati, Proteine, Acqua, Sodio e Sale equivalente) calcolati sul prodotto finito cotto.
-    \item \textbf{Inversione di Scala da Vincolo di Dispensa (Reverse Scaling):} Capacit\`a di ricalcolare l'intera ricetta a ritroso vincolando il moltiplicatore scalare alla quantit\`a limitata di una singola materia prima disponibile in magazzino.
-    \item \textbf{Tracciabilit\`a Normativa degli Allergeni:} Rilevamento automatico e risalita ad albero dei 14 allergeni normativi europei.
-    \item \textbf{Food Cost Contabile ed Equivalenza Culinaria:} Quantificazione del costo del lotto e per singola porzione, con conversioni metriche automatiche e gestione coerente dell'equivalenza densit\`a unitaria ($g \leftrightarrow ml$, $kg \leftrightarrow l$).
-    \item \textbf{Esportazione Documentale Vettoriale Multipagina:} Generazione di schede tecniche A4 con partizione semantica (almeno 2 pagine garantite) e contrasto tipografico assoluto per la produzione in laboratorio.
-    \item \textbf{Integrazione Cloud AI Bivalente (Gemini \& OpenAI):} Compilazione automatica e non-distruttiva, con preservazione dell'unit\`a di resa dell'utente e sicurezza hardware-backed TEE.
+    \item \textbf{Gerarchie Multi-Livello (Composite Recipes):} Le preparazioni complesse non sono insiemi piatti di materie prime, bens\`i aggregati di preparazioni intermedie (\textit{sotto-ricette}). Ad esempio, un \textit{Cornetto alla Crema} include una pasta sfogliata lievitata e una \textit{Crema Pasticcera}. Qualsiasi variazione della resa o della ricetta base della crema deve propagarsi in modo deterministico e reattivo all'intero albero di composizione;
+    \item \textbf{Inversione di Scala da Vincolo di Dispensa (Reverse Scaling):} In ambiente di laboratorio o domestico, la quantit\`a di resa finale \`e frequentemente vincolata dalla disponibilit\`a residua di un ingrediente critico (esempio: 120\,g di burro anzich\'e 175\,g). Il sistema deve essere in grado di calcolare il fattore di scala inverso $k \in \mathbb{R}^+$ rispetto a un generico nodo dell'albero ed estendere la proporzione all'intero grafo;
+    \item \textbf{Tracciabilit\`a Normativa degli Allergeni (Regolamento UE 1169/2011):} L'obbligo di legge impone l'individuazione e la segnalazione dei 14 allergeni normativi. La presenza di un allergene in una foglia del grafo deve essere propagata ricorsivamente fino alla radice;
+    \item \textbf{Food Cost Contabile in Tempo Reale:} Necessit\`a di quantificare all'istante l'incidenza economica di ciascun lotto di produzione e il costo industriale di ogni singola porzione, considerando conversioni tra unit\`a di massa ($g, kg$), di volume ($ml, l$) e unit\`a discrete quantizzate ($pezzi; unit\grave{a}$);
+    \item \textbf{Operativit\`a Senza Soluzione di Continuit\`a (Cooking Mode):} Esigenza di un'interfaccia esecutiva durante la cottura che mantenga il display costantemente attivo, gestisca timer asincroni multipli con allarmi acustici e vibrazione, e supporti aggiunte rapide di tempo non intrusive;
+    \item \textbf{Privacy e Sicurezza delle Chiavi API di Terze Parti:} Protezione crittografica hardware-backed contro attacchi di estrazione locale o perdite accidentali nei backup per le chiavi di accesso a modelli generativi remoti (Google Gemini e OpenAI ChatGPT);
+    \item \textbf{Variazione di Massa Termica in Cottura (Resa Termica \& Calo Peso):} Nei trattamenti termici (cottura in forno, padella, bollitura, frittura) gli alimenti subiscono alterazioni fisiche rilevanti della massa: calo peso per evaporazione dell'acqua (es. torte, arrosti $-10\% \div -20\%$) oppure aumento di massa per assorbimento di liquidi idratanti (es. pasta secca e riso $+100\% \div +150\%$). L'architettura deve modellare tale fenomeno termodinamico calcolando la resa cotta finita a porzione e la conseguente variazione di densit\`a dei nutrienti;
+    \item \textbf{Dichiarazione Nutrizionale Ufficiale (Regolamento UE n. 1169/2011):} Necessit\`a di determinare in modo scientifico la concentrazione o diluizione post-cottura dei 6 nutrienti normativi (Energia in kJ/kcal, Grassi, Carboidrati, Proteine, Acqua, Sodio e Sale equivalente), fornendo la doppia rappresentazione analitica \textit{Per 100g} e \textit{Per Porzione} contrassegnata dalla dicitura legale di stima.
 \end{enumerate}
 
 \subsection{Requisiti Non Funzionali e Vincoli Architetturali}
+Il sistema \`e stato ingegnerizzato rispettando i seguenti vincoli prestazionali e architetturali:
 \begin{itemize}[leftmargin=*]
-    \item \textbf{Offline-First:} Funzionamento autonomo e deterministico a latenza zero in assenza di rete per tutte le funzioni di calcolo, persistenza e cottura.
-    \item \textbf{Complessit\`a Temporale di Ricalcolo:} Complessit\`a $O(|V| + |E|)$ rispetto al grafo di composizione, con tempo di re-rendering $\le 16\,\text{ms}$ a 60 FPS.
-    \item \textbf{Integrit\`a Aciclica Formale:} Garanzia che il grafo rimanga in ogni istante un \textbf{Grafo Diretto Aciclico (DAG)}.
+    \item \textbf{Offline-First:} Tutte le funzioni analitiche, di scaling, di navigazione del grafo, di food cost e di cottura guidata devono operare a latenza zero anche in assenza totale di connettivit\`a di rete;
+    \item \textbf{Tempo di Calcolo dello Scaling:} Complessit\`a temporale $O(|V| + |E|)$ rispetto al grafo di composizione, con tempo di re-rendering $\le 16\,\text{ms}$ a 60\,FPS per evitare frame-drop nell'interfaccia utente dichiarativa;
+    \item \textbf{Assenza di Dipendenze Circolari:} Garanzia formale che il grafo delle ricette rimanga in ogni istante un \textbf{Grafo Diretto Aciclico} (\textbf{DAG});
+    \item \textbf{Memory Footprint Controllato:} Nessuna allocazione ridondante di bitmap durante l'esportazione PDF o la gestione dei timer; rilascio immediato delle risorse audio dell'Hardware Abstraction Layer.
 \end{itemize}
 
 \newpage
 
 % ==============================================================================
-% SEZIONE 2: ARCHITETTURA DEL SOFTWARE
+% SEZIONE 2: ARCHITETTURA DEL SOFTWARE E DESIGN PATTERN
 % ==============================================================================
 \section{Architettura del Software e Pattern Architetturali}
-
-SIMO adotta una rigorosa combinazione di \textbf{Clean Architecture} e \textbf{Model-View-ViewModel (MVVM)}, orchestrata mediante il pattern \textbf{Unidirectional Data Flow (UDF)} di Jetpack Compose.
+SIMO adotta una combinazione rigorosa di \textbf{Clean Architecture} e \textbf{Model-View-ViewModel} (\textbf{MVVM}), orchestrata mediante il pattern \textbf{Unidirectional Data Flow} (\textbf{UDF}) nativo del framework Jetpack Compose.
 
 \begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.48\textwidth]{images/screen_optimized_home.png}
-    \caption{Schermata Home di SIMO: reattivit\`a dello stato Compose con warm-up asincrono immediato.}
-    \label{fig:arch_home}
+	\centering
+	\begin{tcolorbox}[
+		enhanced,
+		colback=techLightBg,
+		colframe=techNavy,
+		arc=3mm,
+		width=0.92\textwidth,
+		boxrule=1pt,
+		halign=center
+		]
+		\small
+		\textbf{\color{techNavy}DIAGRAMMA ARCHITETTURALE A LIVELLI (CLEAN ARCHITECTURE \& UDF)}\\[0.3cm]
+		
+		% Use tabularx to force text wrapping within the available linewidth
+		% >{\centering\arraybackslash}X horizontally centers the text inside the X column
+		\begin{tabularx}{\linewidth}{|>{\centering\arraybackslash}X|}
+			\hline
+			\textbf{\color{techBlue}PRESENTATION LAYER (Jetpack Compose Material 3)}\\
+			Screens: \texttt{RecipeListScreen}, \texttt{RecipeDetailScreen}, \texttt{RecipeEditScreen}, \texttt{CookingModeScreen}, \texttt{ShoppingListScreen}\\
+			UI State Holders: \texttt{RecipeListViewModel}, \texttt{RecipeDetailViewModel}, \texttt{RecipeEditViewModel}, \texttt{ShoppingListViewModel}\\
+			UI Components: \texttt{RecipeNutritionCard} (UE 1169/2011), \texttt{CookingWeightModifierCard}, \texttt{AiOptionsDialog}\\
+			\hline
+			$\Downarrow$ \textit{UI Events (User Intent)} \quad $\Uparrow$ \textit{Immutable StateFlow}\\
+			\hline
+			\textbf{\color{techNavy}DOMAIN LAYER (Pure Kotlin Business Engine)}\\
+			\texttt{MathEngine} (DAG Traversal, Proportional Scaling, BFS Cycle Detection, Food Cost, Resa Termica, Nutrizione UE)\\
+			\texttt{CookingTimerExtractor} (Deterministic Regex NLP) \textbullet{} \texttt{Allergen} \textbullet{} \texttt{RecipeNutrition} \\
+			\hline
+			$\Downarrow$ \textit{Model Operations} \quad $\Uparrow$ \textit{Cold Reactive Flows}\\
+			\hline
+			\textbf{\color{techSlate}DATA LAYER (Persistence, Hardware HAL \& Cloud API)}\\
+			\texttt{RecipeRepository} (Single Source of Truth, ACID Transactions)\\
+			\texttt{AppDatabase} (Room SQLite ORM, Migrations v9 $\to$ v10 $\to$ v11 $\to$ v12, DAOs)\\
+			\texttt{CryptoUtils} (AndroidKeyStore AES-256 GCM) \textbullet{} \texttt{GeminiRecipeService} \& \texttt{OpenAiRecipeService} (Dual Cloud AI)\\
+			\texttt{RecipePdfExporter} (Vector Graphics PdfDocument) \textbullet{} \texttt{BackupManager} (JSON Merge Engine)\\
+			\hline
+		\end{tabularx}
+	\end{tcolorbox}
+	\caption{Stratificazione architetturale ad accoppiamento debole di SIMO.}
+	\label{fig:arch_layers}
 \end{figure}
 
-\subsection{Struttura a Livelli (Layered Architecture)}
-\begin{itemize}[leftmargin=*]
-    \item \textbf{Presentation Layer (UI Declarative):} Composable modulari (`RecipeListScreen`, `RecipeDetailScreen`, `RecipeEditScreen`, `CookingModeScreen`, `ShoppingListScreen`), gestiti da StateFlow immutabili emessi dai ViewModel.
-    \item \textbf{Domain Layer (Business Logic pura):} Modulo indipendente privo di dipendenze verso Android SDK:
-    \begin{itemize}[noitemsep]
-        \item `MathEngine`: Espansione DAG, scaling, reverse scaling, concentrazione nutrizionale, food cost;
-        \item `RecipeTags`: Normalizzazione delle categorie e gestione di \textit{Panini};
-        \item `ItalianGrammarUtils` e `CookingTimerExtractor`.
-    \end{itemize}
-    \item \textbf{Data Layer (Persistenza \& Cloud HAL):}
-    \begin{itemize}[noitemsep]
-        \item `AppDatabase`: Room SQLite ORM (Schema v12);
-        \item `CryptoUtils`: AndroidKeyStore AES-256 GCM;
-        \item `GeminiRecipeService` \& `OpenAiRecipeService`;
-        \item `RecipePdfExporter` \& `BackupManager`.
-    \end{itemize}
-\end{itemize}
+\subsection{Unidirectional Data Flow (UDF) e State Immutability}
+Ogni schermata applicativa \`e funzione pura dello stato corrente (\textit{State-Driven UI}):
+$$\text{UI} = f(\text{UiState})$$
+I ViewModel non espongono variabili mutabili pubbliche: ogni transizione di stato avviene tramite istanze di data class immutabili incapsulate in \texttt{StateFlow<T>}.
+
+\begin{lstlisting}[caption={Esempio di emissione di stato reattivo in RecipeListViewModel}]
+val uiState: StateFlow<RecipeListUiState> = combine(
+    repository.allRecipes,
+    _filterState
+) { recipes, filter ->
+    // Calcolo filtri, ordinamento e ricerca su pool di background
+    val sortedAvailableTags = RecipeTags.getAllSortedTags(recipes.map { it.category })
+    val byTags = if (filter.selectedTags.isEmpty()) recipes 
+                 else recipes.filter { r -> filter.selectedTags.any { it.equals(r.category, true) } }
+    val byFavorites = if (filter.favoritesOnly) byTags.filter { it.isFavorite } else byTags
+    val filtered = if (filter.query.isBlank()) byFavorites 
+                   else byFavorites.filter { it.name.contains(filter.query, true) }
+    
+    
+    
+    val sorted = when (filter.sort) {
+        RecipeSortOption.NAME_ASC -> filtered.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+        RecipeSortOption.NAME_DESC -> filtered.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
+        RecipeSortOption.DATE_DESC -> filtered.sortedByDescending { it.createdAt }
+        RecipeSortOption.DATE_ASC -> filtered.sortedBy { it.createdAt }
+    }
+    RecipeListUiState(recipes = sorted, availableTags = sortedAvailableTags, ...)
+}.flowOn(Dispatchers.Default)
+ .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeListUiState())
+\end{lstlisting}
 
 \subsection{Concorrenza e Thread Safety}
-L'esecuzione \`e rigorosamente segregata sui dispatcher Kotlin:
+L'applicazione fa uso sistematico delle Kotlin Coroutines, assegnando rigorosamente i contesti di esecuzione:
 \begin{itemize}[leftmargin=*]
-    \item `Dispatchers.Main`: Binding reattivo Compose a 60 FPS;
-    \item `Dispatchers.Default`: Attraversamento grafo DAG, calcolo nutrizionale e bilanciamento dosi;
-    \item `Dispatchers.IO`: Query Room SQLite, I/O crittografico, client HTTPS REST e serializzazione PDF/JSON.
+    \item \textbf{\texttt{Dispatchers.Main}:} Riservato esclusivamente al rendering dichiarativo di Jetpack Compose e al binding degli eventi UI;
+    \item \textbf{\texttt{Dispatchers.Default}:} Dedicato al calcolo analitico intensivo (espansione del DAG, determinazione dei percorsi, ordinamento, estrazione regex dei timer e ricalcolo proporzionale);
+    \item \textbf{\texttt{Dispatchers.IO}:} Adibito all'I/O su database Room SQLite, operazioni di crittografia hardware, chiamate REST HTTP di Gemini e stream di scrittura PDF/JSON.
 \end{itemize}
+
+\subsection{Lifecycle Optimization: Warm-up Asincrono e Pre-caching all'Avvio}
+Per prevenire l'anti-pattern del \textit{Flash of Empty State} (in cui la schermata home mostra un layout vuoto per alcune centinaia di millisecondi durante l'interrogazione asincrona iniziale del database), l'architettura implementa una fase di warm-up reattivo. 
+Durante lo splash iniziale di avvio, il repository esegue il pre-caricamento immediato della collezione completa delle entit\`a \texttt{RecipeWithComponents}. L'emissione iniziale del relativo \texttt{StateFlow} avviene in modo concorrente con la composizione della UI, garantendo che al passaggio alla schermata del ricettario l'elenco sia gi\`a interamente popolato e ordinato, azzerando qualsiasi percezione di caricamento differito.
 
 \newpage
 
 % ==============================================================================
-% SEZIONE 3: DOMAIN ENGINE - DAG, NUTRIZIONE E FOOD COST
+% SEZIONE 3: DOMAIN ENGINE - GRAFI E CALCOLO MATEMATICO
 % ==============================================================================
-\section{Domain Engine: Teoria dei Grafi, Nutrizione e Calcolo Matematico}
+\section{Domain Engine: Teoria dei Grafi e Calcolo Matematico}
+Il nucleo algoritmico risiede nel file \texttt{MathEngine.kt}, implementato come modulo Kotlin puro privo di dipendenze verso il framework Android.
 
 \subsection{Formalizzazione del Ricettario come DAG Pesato}
-Sia $G = (V, E, W)$ un grafo orientato pesato finito privo di cicli:
-\begin{equation}
-\forall v \in V, \quad \nexists \text{ cammino orientato } v \rightsquigarrow v \iff G \text{ \`e un DAG}
-\end{equation}
-dove $V = V_{\text{raw}} \cup V_{\text{recipe}}$ e $E \subseteq V_{\text{recipe}} \times V$.
-Il peso dell'arco modella la quantit\`a base $q$ e l'unit\`a $u$.
+\begin{definition}[Grafo delle Ricette]
+Sia $G = (V; E; W)$ un grafo orientato pesato finito dove:
+\begin{itemize}
+    \item $V = V_{\text{raw}} \cup V_{\text{recipe}}$ \`e l'insieme dei vertici, partizionato in materie prime $V_{\text{raw}}$ e preparazioni composte $V_{\text{recipe}}$.
+    \item $E \subseteq V_{\text{recipe}} \times V$ \`e l'insieme degli archi orientati $(u; v)$, indicante che la ricetta $u$ richiede l'ingrediente o sotto-ricetta $v$.
+    \item $W: E \to \mathbb{R}^+ \times \mathcal{U}$ \`e la funzione peso che associa ad ogni arco la tupla $(q; u)$ rappresentante la quantit\`a base $q$ e l'unit\`a di misura $u \in \mathcal{U}$.
+\end{itemize}
+\end{definition}
+
+Affinch\'e il calcolo delle dosi converga in tempo finito e non generi paradossi fisici (ad esempio: la Crema Pasticcera che richiede Cornetti che a loro volta richiedono Crema Pasticcera), $G$ deve soddisfare il vincolo fondamentale di aciclicit\`a:
+$$\forall v \in V, \quad \nexists \text{ cammino orientato } v \rightsquigarrow v \quad \iff \quad G \text{ \`e un DAG}$$
 
 \subsection{Algoritmo di Rilevamento Cicli Preventivo (\texttt{wouldCreateCycle})}
-Prima di inserire o modificare un arco candidato $(u, v)$, il sistema esegue una BFS:
-\begin{equation}
-\text{hasCycle}(u, v) \iff u \text{ \`e raggiungibile da } v \text{ in } G
-\end{equation}
+Prima di consentire l'inserimento o la modifica di un arco $(u; v)$ dove $u$ \`e la ricetta genitore e $v$ \`e la ricetta figlia candidata, il sistema valuta se esiste un cammino diretto $v \rightsquigarrow u$.
 
-\subsection{Modello Matematico dei Valori Nutrizionali e Concentrazione in Cottura}
-Ciascun ingrediente base $i \in V_{\text{raw}}$ \`e caratterizzato da un vettore nutrizionale per 100\,g di materia prima cruda:
-\begin{equation}
-\vec{N}_i = \begin{pmatrix} C_i \\ K_i \\ F_i \\ P_i \\ W_i \\ S_i \end{pmatrix} = \begin{pmatrix} \text{Calorie [kcal]} \\ \text{Carboidrati [g]} \\ \text{Grassi [g]} \\ \text{Proteine [g]} \\ \text{Acqua [g]} \\ \text{Sodio [mg]} \end{pmatrix}
-\end{equation}
+\begin{theorem}[Condizione di Aciclicit\`a su Inserimento di Arco]
+Dato un DAG $G = (V; E)$ e un arco candidato $(u; v)$, il nuovo grafo $G' = (V; E \cup \{(u; v)\})$ \`e un DAG se e solo se $u$ non \`e raggiungibile da $v$ in $G$.
+\end{theorem}
+\begin{proof}
+Se $u$ fosse raggiungibile da $v$, esisterebbe un cammino orientato $p = (v; w_1; w_2; \dots; w_k; u)$ in $G$. Aggiungendo l'arco $(u; v)$, si formerebbe il ciclo $C = (u; v; w_1; \dots; w_k; u)$, violando la propriet\`a di DAG. Se $u$ non \`e raggiungibile da $v$, nessun nuovo cammino originante da $u$ potr\`a mai ricongiungersi a un suo predecessore, preservando l'aciclicit\`a.
+\end{proof}
 
-Dato un albero scalato con insieme di foglie $c \in \text{Foglie}(R)$, ciascuna avente massa scalata $m(c)$ (convertita in grammi con densit\`a unitaria per i millilitri), l'apporto assoluto del componente \`e:
-\begin{equation}
-\vec{N}_{\text{tot}}(c) = \frac{m(c)}{100} \cdot \vec{N}_{\text{item}(c)}
-\end{equation}
+L'implementazione in \texttt{MathEngine.kt} impiega una Breadth-First Search (BFS) ottimizzata:
+\begin{lstlisting}[caption={Algoritmo BFS per la validazione aciclica di nuovi componenti}]
+fun wouldCreateCycle(
+    parentRecipeId: String,
+    candidateChildId: String,
+    existingEdges: List<Pair<String, String>>
+): Boolean {
+    if (parentRecipeId.isBlank() || candidateChildId.isBlank()) return false
+    if (parentRecipeId == candidateChildId) return true // Auto-loop immediato
 
-La massa totale cruda $W_{\text{raw}}$ e la massa cotta finita $W_{\text{cooked}}$ sono definite da:
-\begin{equation}
-W_{\text{raw}} = \sum_{c \in \text{Foglie}} m(c)
-\end{equation}
-\begin{equation}
-W_{\text{cooked}} = W_{\text{raw}} \cdot \left(1 + \frac{\gamma}{100}\right), \quad \text{con } \gamma = \text{cookingWeightModifier} \in (-100, +\infty)
-\end{equation}
+    // Costruzione lista di adiacenza
+    val adjacency = mutableMapOf<String, MutableList<String>>()
+    for ((parent, child) in existingEdges) {
+        if (parent.isNotBlank() && child.isNotBlank()) {
+            adjacency.getOrPut(parent) { mutableListOf() }.add(child)
+        }
+    }
 
-\begin{archbox}[Legge di Concentrazione dei Nutrienti in Cottura]
-I valori nutrizionali medi per 100\,g di prodotto finito cotto sono calcolati normalizzando la somma assoluta dei nutrienti rispetto alla massa cotta effettiva:
-\begin{equation}
-\vec{N}_{100\text{g}} = \frac{\sum_{c \in \text{Foglie}} \vec{N}_{\text{tot}}(c)}{W_{\text{cooked}}} \times 100
-\end{equation}
-Se $\gamma < 0$ (es. evaporazione del 10\%), $W_{\text{cooked}} < W_{\text{raw}}$ e la densit\`a nutrizionale per 100\,g aumenta coerentemente con la realt\`a termodinamica.
-I valori per porzione singola sono invece indipendenti dall'evaporazione dell'acqua:
-\begin{equation}
-\vec{N}_{\text{porzione}} = \frac{\sum_{c \in \text{Foglie}} \vec{N}_{\text{tot}}(c)}{Y_{\text{target}}}
-\end{equation}
+    val queue = ArrayDeque<String>()
+    queue.add(candidateChildId)
+    val visited = mutableSetOf<String>()
+
+    while (queue.isNotEmpty()) {
+        val curr = queue.removeFirst()
+        if (curr == parentRecipeId) return true // Ciclo rilevato!
+        if (visited.add(curr)) {
+            adjacency[curr]?.forEach { next ->
+                if (!visited.contains(next)) queue.add(next)
+            }
+        }
+    }
+    return false
+}
+\end{lstlisting}
+\textbf{Complessit\`a Computazionale:}
+\begin{itemize}
+    \item \textbf{Tempo:} $O(|V| + |E|)$ nel caso peggiore (visita di tutti i vertici e archi raggiungibili).
+    \item \textbf{Spazio:} $O(|V|)$ per l'allocazione della coda e dell'insieme di visitati.
+\end{itemize}
+
+\subsection{Algoritmo di Espansione ad Albero Scalato (\texttt{buildScaledTree})}
+Dato un nodo radice $R \in V_{\text{recipe}}$ e un target di resa $Y_{\text{target}} \in \mathbb{R}^+$, il fattore di scala primario $k_R$ \`e calcolato come:
+$$k_R = \frac{Y_{\text{target}}}{Y_{\text{base}}(R)}$$
+
+Per ciascun componente $c = (R, i)$ con quantit\`a base $q_{\text{base}}(c)$:
+$$q_{\text{scaled}}(c) = q_{\text{base}}(c) \cdot k_R$$
+
+Se il componente $i$ \`e a sua volta una ricetta $i \in V_{\text{recipe}}$, essa richiede una quantit\`a pari a $q_{\text{scaled}}(c)$ espressa nell'unit\`a di resa della sotto-ricetta. Di conseguenza, il fattore di scala per la sotto-ricetta $k_i$ diventa:
+$$k_i = \frac{q_{\text{scaled}}(c)}{Y_{\text{base}}(i)} = \frac{q_{\text{base}}(c) \cdot k_R}{Y_{\text{base}}(i)}$$
+Il processo prosegue ricorsivamente fino alle foglie del grafo ($V_{\text{raw}}$).
+
+\begin{archbox}[Protezione da Stack Overflow su Ricorsione Profonda]
+Per garantire la robustezza del runtime Android e prevenire esaurimenti di stack su grafi patologici, l'algoritmo impone una soglia massima di guardia \texttt{MAX\_RECURSION\_DEPTH = 25} e mantiene un set di controllo \texttt{visitedRecipeIds} ad ogni ramo dell'albero.
 \end{archbox}
 
-\subsubsection{Derivazione di Energia e Sale Equivalente}
-In conformit\`a con il Regolamento UE 1169/2011:
-\begin{equation}
-\text{Energia [kJ]} = (K \times 17) + (P \times 17) + (F \times 37)
-\end{equation}
-\begin{equation}
-\text{Sale Equivalente [g]} = \frac{S\text{ [mg]}}{1000} \times 2.5
-\end{equation}
+\subsection{Modello di Reverse Scaling}
+Il Reverse Scaling consente di calcolare il moltiplicatore $k^*$ a partire da un generico ingrediente $j$ per cui l'operatore dispone di una quantit\`a limite $q_{\text{disp}}(j)$:
+$$k^* = \frac{q_{\text{disp}}(j)}{q_{\text{base}}(j)}$$
+Tutti gli altri componenti $m \neq j$ e la resa complessiva $Y$ vengono immediatamente riparametrati:
+$$Y^* = Y_{\text{base}} \cdot k^*, \qquad \forall m \in \text{Componenti}, \quad q^*(m) = q_{\text{base}}(m) \cdot k^*$$
 
-\subsection{Modello Analitico del Food Cost ed Equivalenza Culinaria}
-Il costo elementare $C(c)$ del componente scalato $c$ con quantit\`a $q(c)$ e unit\`a $u_r$, dato un prezzo unitario $p$ con unit\`a commerciale $u_p$, applica l'operatore di conversione esteso con equivalenza culinaria 1:1 ($g \leftrightarrow ml$, $kg \leftrightarrow l$):
-\begin{equation}
-\mu(u_r, u_p) = 
+\subsection{Quantizzazione e Sistema delle Unit\`a di Misura}
+In gastronomia e pasticceria non tutte le grandezze possono essere trattate come numeri reali continui in $\mathbb{R}^+$. L'architettura classifica le unit\`a $\mathcal{U}$ in tre categorie ortogonali:
+\begin{enumerate}
+    \item \textbf{Unit\`a Continue Ponderali e Volumetriche ($g, kg, ml, l$):} I valori scalati mantengono fino a due cifre decimali se $q < 100$, oppure vengono approssimati al numero intero se $q \ge 100$ per uniformit\`a con le bilance digitali professionali.
+    \item \textbf{Unit\`a Discrete Quantizzate ($pezzi; unit\grave{a}$):}
+    $$\text{roundIntegerAmount}(q) = \max(1; \lfloor q + 0.5 \rfloor)$$
+    Nel caso specifico delle uova intere o dei tuorli, un valore come 2.4 unit\`a non \`e utilizzabile direttamente senza creare sprechi. La quantizzazione arrotonda all'intero pi\`u prossimo salvaguardando il minimo di 1 unit\`a.
+    \item \textbf{Quantificatori Qualitativi ($q.b.$):} Non sono soggetti a moltiplicazione scalare e mantengono costantemente la dicitura letterale ``q.b.''.
+\end{enumerate}
+
+\subsection{Modello Analitico del Food Cost}
+Sia $P(i)$ il prezzo per unit\`a di misura associato all'ingrediente $i$. Il costo elementare $C(c)$ del componente scalato $c$ con quantit\`a $q(c)$ e unit\`a $u_r$, dato un prezzo $p$ con unit\`a $u_p$, \`e formalizzato come:
+$$C(c) = q(c) \cdot \mu(u_r; u_p) \cdot p$$
+Dove $\mu(u_r, u_p)$ \`e l'operatore di conversione metrica:
+$$
+    \mu(u_r; u_p) = 
+    \begin{cases}
+        1 & \text{se } u_r = u_p \lor (u_r \in \{g, ml\} \land u_p \in \{g, ml\}) \lor (u_r \in \{kg, l\} \land u_p \in \{kg, l\}) \\
+        10^{-3} & \text{se } u_r \in \{g, ml\} \land u_p \in \{kg, l\} \\
+        10^3 & \text{se } u_r \in \{kg, l\} \land u_p \in \{g, ml\} \\
+        \frac{\text{gramsPerUnit}}{1000} & \text{se } u_r \in \{\text{unit\`a, pz}\} \land u_p = kg \\
+        \text{gramsPerUnit} & \text{se } u_r \in \{\text{unit\`a, pz}\} \land u_p = g \\
+        0 & \text{se } u_r = \text{q.b.}
+    \end{cases}
+$$
+Nel contesto della ricetta, un ingrediente la cui dose \`e qualificata come \textit{q.b.} (quanto basta) presenta $C(c) = 0$, trattandosi di un dosaggio non ponderale a discrezione dello chef (ad es. un pizzico di sale o spezie) che non deve alterare artificiosamente il costo base del lotto di produzione.
+
+Il costo totale dell'impasto $C_{\text{totale}}$ e il costo unitario per porzione $C_{\text{porzione}}$ si ottengono mediante accumulazione ricorsiva bottom-up:
+$$C_{\text{totale}} = \sum_{c \in \text{Foglie}} C(c) + \sum_{s \in \text{Sotto-Ricette}} C_{\text{totale}}(s)$$
+$$C_{\text{porzione}} = \frac{C_{\text{totale}}}{Y_{\text{target}}}$$
+
+\subsection{Coerenza Metrica tra Food Cost e Carrello della Spesa}
+L'aggregazione degli ingredienti nella lista della spesa adotta l'identico operatore di conversione metrica $\mu(u_r, u_p)$. In questo modo, un ingrediente con costo espresso al chilogrammo (es. \euro\,1.80/kg) la cui ricetta richiede 250\,g produce nel carrello della spesa una stima pari a:
+$$\text{Costo}_{\text{spesa}} = 250 \cdot 10^{-3} \cdot 1.80 = 0.45\,\text{\euro}$$
+eliminando qualsiasi discrepanza tra il Food Cost stimato nel dettaglio ricetta e la spesa complessiva.
+
+Per gli ingredienti a quantitativo qualitativo indeterminato (\textit{q.b.}), la lista della spesa eredita l'unit\`a di misura associata al prezzo d'acquisto ($u_p$) e adotta una quantit\`a deterministica standard per consentire l'approvvigionamento del formato commerciale minimo:
+$$
+q_{\text{spesa}} = 
 \begin{cases}
-1 & \text{se } u_r = u_p \text{ oppure } (u_r \in \{g, ml\} \land u_p \in \{g, ml\}) \\
-10^{-3} & \text{se } u_r \in \{g, ml\} \land u_p \in \{kg, l\} \\
-10^3 & \text{se } u_r \in \{kg, l\} \land u_p \in \{g, ml\} \\
-\frac{\text{gramsPerUnit}}{1000} & \text{se } u_r \in \{\text{unit\`a, pz}\} \land u_p \in \{kg, l\} \\
-\text{gramsPerUnit} & \text{se } u_r \in \{\text{unit\`a, pz}\} \land u_p \in \{g, ml\} \\
-0 & \text{se } u_r = \text{q.b.}
+    100 & \text{se } u_p \in \{\text{g}, \text{ml}\} \\
+    1 & \text{per unit\`a discrete o formati commerciali (pz, unit\`a)}
 \end{cases}
-\end{equation}
+$$
+fornendo all'utente un punto di partenza facilmente calibrabile direttamente dalla checklist d'acquisto.
+
+\subsection{Tipografia e Algoritmo di Line-Breaking Antifrattura}
+Nella presentazione delle stringhe descrittive complesse degli ingredienti (specialmente denominazioni protette quali \textit{Formaggio Parmigiano Reggiano DOP} o \textit{Olio Extravergine d'Oliva}), l'algoritmo di rendering di Jetpack Compose \`e stato vincolato per inibire la sillabazione infrasillabica (\texttt{Hyphens.None}) e forzare il wrapping esclusivamente sui delimitatori di parola (\texttt{LineBreak.Paragraph}). Ci\`o previene la frammentazione antiestetica dei lemmi merceologici sui display a densit\`a variabile.
+
+\subsection{Stabilit\`a Tipografica dei Badge Allergeni e Prevenzione della Compressione Orizzontale}
+Nella scheda di riepilogo normativo degli allergeni (\texttt{RecipeAllergensCard}), ciascuna voce associa la denominazione merceologica (es. \textit{Anidride solforosa e solfiti}) al rispettivo identificatore normativo UE (es. \textit{Allergene \#12}). A causa del comportamento di misurazione unconstrained dei layout \texttt{Row} in Compose con allineamento \texttt{SpaceBetween}, stringhe particolarmente estese provocavano una contrazione dell'area utile assegnata al badge laterale, inducendo il wrapping anomalo della sequenza (\textit{``Aller'' / ``gene'' / ``\#12''}).
+
+La correzione architetturale applica due vincoli concorrenti di layout:
+\begin{enumerate}
+    \item Il componente testuale della denominazione riceve il modificatore flessibile non saturante:
+    \begin{lstlisting}[caption={Vincolo dimensionale flessibile per la label dell'allergene}]
+Text(
+    text = allergen.displayName,
+    modifier = Modifier.weight(1f, fill = false)
+)
+    \end{lstlisting}
+    Ci\`o impone a Compose di misurare prioritariamente il badge laterale alla sua dimensione intrinseca ideale, assegnando alla denominazione lo spazio residuo senza esercitare pressione di restringimento.
+    \item Il badge numerico \`e blindato con vincoli di linea singola inderogabili:
+    \begin{lstlisting}[caption={Inibizione del wrapping sul badge identificativo}]
+Text(
+    text = "Allergene #${allergen.ordinal + 1}",
+    maxLines = 1,
+    softWrap = false
+)
+    \end{lstlisting}
+\end{enumerate}
+Tale configurazione garantisce che su qualsiasi densit\`a dpi e con qualsivoglia fattore di scala dei caratteri di sistema, il contrassegno normativo si presenti sempre integro su un'unica riga.
+
+\subsection{Equivalenza Culinaria Massa-Volume ($1:1$) nel Food Cost e nella Spesa}
+Nell'esperienza gastronomica quotidiana, molti ingredienti fluidi o semi-densi (acqua, latte, succhi, infusi, brodi, caff\`e, panna liquida, ecc.) vengono misurati indifferentemente in volume ($ml, l$) o in peso ($g, kg$). L'operatore di conversione $\mu(u_r; u_p)$ integra il principio di \textbf{equivalenza culinaria isotropa}:
+$$1\,\text{g} \equiv 1\,\text{ml}, \qquad 1\,\text{kg} \equiv 1\,\text{l}$$
+In questo modo, se un ingrediente viene dosato in millilitri (es. $300\,\text{ml}$ di latte o caff\`e) ma il listino d'acquisto \`e espresso al chilogrammo (es. \euro\,$25.00/\text{kg}$), il costo elementare non genera anomalie di scala n\'e moltiplicazioni improprie:
+$$C = 300\,\text{ml} \cdot 10^{-3} \cdot 25.00 = 7.50\,\text{\euro}$$
+L'aggregatore della lista della spesa applica la medesima equivalenza, garantendo coerenza assoluta tra magazzino, preventivo economico e quantit\`a da acquistare.
+
+\subsection{Modello Matematico della Variazione di Massa in Cottura (Resa Termica)}
+Durante la trasformazione termica, la massa complessiva della preparazione si modifica in funzione del parametro \texttt{cookingWeightModifier} ($\Delta M \in [-100, +\infty)\,$):
+\begin{definition}[Massa Cruda e Massa Cotta Finita]
+Sia $W_{\text{raw}}$ la massa totale dell'impasto a crudo, calcolata come sommatoria dei pesi di tutti gli ingredienti ponderali ($g, kg$) o convertibili ($ml, l$):
+$$W_{\text{raw}} = \sum_{c \in \text{Foglie}} q_{\text{scaled}}(c) \cdot \rho(u_c)$$
+dove $\rho(u_c) = 1$ per grammi e millilitri, $\rho(u_c) = 1000$ per chilogrammi e litri, e $\rho(u_c) = \text{gramsPerUnit}$ per unit\`a discrete.
+La massa cotta finita $W_{\text{cooked}}$ \`e definita come:
+$$W_{\text{cooked}} = W_{\text{raw}} \cdot \left(1 + \frac{\Delta M}{100}\right)$$
+\end{definition}
+
+Si distinguono tre regimi termodinamici:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Calo Peso Termico ($\Delta M < 0$):} Evaporazione d'acqua per torte da forno, crostate, panificati e arrosti (es. $\Delta M = -10\% \implies W_{\text{cooked}} = 0.90 \cdot W_{\text{raw}}$);
+    \item \textbf{Idratazione e Aumento di Massa ($\Delta M > 0$):} Assorbimento di brodo o acqua di cottura da parte di amidi e cereali secchi (es. pasta secca $\Delta M = +120\% \implies W_{\text{cooked}} = 2.20 \cdot W_{\text{raw}}$);
+    \item \textbf{Regime Neutro ($\Delta M = 0$):} Preparazioni fredde, salse crude, cocktail o gelati dove non vi \`e perdita n\'e guadagno di solvente volatile.
+\end{itemize}
+
+Il peso finito cotto di ciascuna porzione \`e dato da:
+$$w_{\text{portion, cooked}} = \frac{W_{\text{cooked}}}{N_{\text{portions}}}$$
+
+\subsection{Modello di Calcolo della Dichiarazione Nutrizionale UE (Regolamento UE n. 1169/2011)}
+Ciascuna materia prima $i \in V_{\text{raw}}$ possiede un vettore nutrizionale intrinseco a crudo riferito a $100\,\text{g}$:
+$$\mathbf{Nut}_i = \begin{pmatrix} E_i \\ C_i \\ F_i \\ P_i \\ W_i \\ S_i \end{pmatrix} = \begin{pmatrix} \text{Energia (kcal)} \\ \text{Carboidrati (g)} \\ \text{Grassi (g)} \\ \text{Proteine (g)} \\ \text{Acqua/Umidit\`a (g)} \\ \text{Sodio (mg)} \end{pmatrix}$$
+L'Energia in kiloJoule viene calcolata secondo il fattore di conversione standard UE:
+$$E_{\text{kJ}} = E_{\text{kcal}} \times 4.184$$
+La quantit\`a equivalente di \textbf{Sale (g)} \`e formalizzata dal Regolamento UE 1169/2011 moltiplicando il Sodio (espresso in grammi) per la costante stechiometrica del cloruro di sodio ($2.5$):
+$$\text{Sale (g)} = \frac{Sodio_{\text{mg}}}{1000} \times 2.5$$
+
+La quantit\`a assoluta totale di ciascun nutriente nella ricetta prima della cottura \`e:
+$$\mathbf{Nut}_{\text{tot}} = \sum_{c \in \text{Componenti}} \frac{q_{\text{grams}}(c)}{100} \cdot \mathbf{Nut}_c$$
+
+\subsection{Algoritmo di Concentrazione e Diluizione Nutrizionale Post-Cottura}
+\begin{theorem}[Fattore di Concentrazione Nutrizionale sulla Resa Cotta]
+Dato che i macronutrienti (grassi, proteine, carboidrati) e i micronutrienti minerali (sodio/sale) non subiscono evaporazione a temperature di cottura ordinarie ($\le 250^\circ\text{C}$), la massa assoluta dei nutrienti si conserva: $\mathbf{Nut}_{\text{tot, cooked}} = \mathbf{Nut}_{\text{tot, raw}}$.
+Pertanto, la concentrazione di ciascun nutriente per $100\,\text{g}$ di prodotto finito cotto \`e funzione inversa della massa cotta:
+$$\mathbf{Nut}_{\text{cooked}}^{100g} = \frac{\mathbf{Nut}_{\text{tot}}}{W_{\text{cooked}}} \times 100 = \frac{\mathbf{Nut}_{\text{tot}}}{W_{\text{raw}} \cdot \left(1 + \frac{\Delta M}{100}\right)} \times 100$$
+\end{theorem}
+\begin{proof}
+Se $\Delta M < 0$ (evaporazione dell'acqua), il denominatore decresce ($W_{\text{cooked}} < W_{\text{raw}}$), determinando un aumento della densit\`a calorica e nutrizionale per 100 grammi (effetto di concentrazione). Viceversa, se $\Delta M > 0$ (assorbimento d'acqua), il denominatore cresce, inducendo una diluizione della densit\`a nutrizionale per 100 grammi. In entrambi i casi, l'apporto nutrizionale \textbf{per porzione} rimane invariato rispetto al totale:
+$$\mathbf{Nut}_{\text{portion}} = \frac{\mathbf{Nut}_{\text{tot}}}{N_{\text{portions}}}$$
+\end{proof}
+
+\subsection{Regole di Conservazione Gastronomica dell'Unit\`a di Resa}
+Per prevenire conversioni inappropriate operate dai modelli linguistici (ad es. forzare a ``porzioni'' preparazioni con resa unitaria intrinseca), il motore impone le seguenti regole deterministiche:
+\begin{itemize}[leftmargin=*]
+    \item Se l'unit\`a inserita dall'utente appartiene all'insieme dei descrittori ammissibili per la classe di ricetta (es. \textit{torta, crostata} per categoria Dolci; \textit{bicchieri, calici, tazze} per Caffetteria o Drink; \textit{panini, burger} per la categoria Panini; \textit{teglia, pizza} per Pizze), il generatore AI \`e vincolato contrattualmente a preservare fedelmente tale unit\`a;
+    \item Solo in caso di incompatibilit\`a semantica manifesta (es. \textit{bicchieri} per un arrosto di carne o per un risotto), il sistema applica il fallback sicuro al formato generico ``porzioni''.
+\end{itemize}
 
 \newpage
 
@@ -315,29 +522,100 @@ Il costo elementare $C(c)$ del componente scalato $c$ con quantit\`a $q(c)$ e un
 % SEZIONE 4: STRATO DATI, ROOM DATABASE E PERSISTENZA
 % ==============================================================================
 \section{Strato Dati, Room Database e Persistenza Reattiva}
+\subsection{Schema Relazionale e Normalizzazione}
+Il database relazionale locale \`e implementato mediante \textbf{Android Room} (schema version 12), configurato senza esportazione di schema per ottimizzazione di build KSP.
 
-\subsection{Schema Relazionale Room (Versione 12)}
-Il database relazionale locale adotta Android Room SQLite con migrazione incrementale:
+\begin{figure}[h!]
+    \centering
+    \begin{tcolorbox}[
+        enhanced,
+        colback=techLightBg,
+        colframe=techNavy,
+        arc=2mm,
+        width=0.95\textwidth,
+        boxrule=1pt
+    ]
+        \scriptsize\ttfamily
+        \textbf{TABLE items} (id TEXT PK, name TEXT, type TEXT, defaultUnit TEXT, pricePerUnit REAL, priceUnit TEXT, gramsPerUnit REAL, allergens TEXT, caloriesKcal REAL NOT NULL DEFAULT 0.0, carbsG REAL NOT NULL DEFAULT 0.0, fatsG REAL NOT NULL DEFAULT 0.0, proteinsG REAL NOT NULL DEFAULT 0.0, waterG REAL NOT NULL DEFAULT 0.0, sodiumMg REAL NOT NULL DEFAULT 0.0)\\[0.15cm]
+        \textbf{TABLE recipes} (id TEXT PK, name TEXT, description TEXT, baseYieldQuantity REAL, yieldUnit TEXT, instructions TEXT, isDefault INTEGER, isFavorite INTEGER, category TEXT, createdAt INTEGER, cookingWeightModifier REAL NOT NULL DEFAULT 0.0)\\[0.15cm]
+        \textbf{TABLE recipe\_components} (id INTEGER PK AUTOINCREMENT, parentRecipeId TEXT, childItemId TEXT, baseQuantity REAL, unit TEXT, sortOrder INTEGER)\\[0.15cm]
+        \textbf{TABLE shopping\_items} (id INTEGER PK AUTOINCREMENT, itemName TEXT, quantity REAL, unit TEXT, unitPrice REAL NOT NULL DEFAULT 0.0, priceUnit TEXT, source TEXT, isChecked INTEGER, createdAt INTEGER)
+    \end{tcolorbox}
+    \caption{Schema DDL delle entit\`a relazionali in Room.}
+    \label{fig:schema_room}
+\end{figure}
 
-\begin{table}[h!]
-\centering
-\small
-\begin{tabularx}{\textwidth}{p{3.2cm}p{4.2cm}X}
-\toprule
-\textbf{Tabella} & \textbf{Colonne Chiave} & \textbf{Descrizione e Campi v2.0} \\
-\midrule
-\texttt{items} & \texttt{id, name, type, defaultUnit, pricePerUnit, allergens, nutrizione} & Include \texttt{caloriesKcal}, \texttt{carbohydratesG}, \texttt{fatsG}, \texttt{proteinsG}, \texttt{waterG}, \texttt{sodiumMg} (REAL). \\
-\texttt{recipes} & \texttt{id, name, baseYield, yieldUnit, category, cookingModifier} & Include \texttt{cookingWeightModifier} (REAL NOT NULL DEFAULT 0.0). \\
-\texttt{recipe\_components} & \texttt{id, parentRecipeId, childItemId, baseQuantity, unit} & Modella gli archi orientati pesati del grafo DAG. \\
-\texttt{shopping\_items} & \texttt{id, itemName, quantity, unit, unitPrice, priceUnit} & Articoli della spesa con persistenza dei prezzi unitari. \\
-\bottomrule
-\end{tabularx}
-\caption{Schema delle tabelle principali in Room Database (Schema Version 12).}
-\end{table}
+\subsection{Polimorfismo Relazionale degli Item}
+Per supportare la composizione arbitraria del DAG, l'entit\`a \texttt{ItemEntity} \`e polimorfa:
+\begin{itemize}[leftmargin=*]
+    \item Se \texttt{type = "RAW\_INGREDIENT"}, l'elemento rappresenta una materia prima fisica primaria (esempio: \textit{Latte intero}, \textit{Farina 00}).
+    \item Se \texttt{type = "RECIPE"}, l'elemento funge da proxy referenziabile verso una tupla nella tabella \texttt{recipes} avente la medesima chiave primaria (\texttt{items.id = recipes.id}).
+\end{itemize}
 
-\subsection{Pattern di Modifica Reattiva ed Entit\`a Immutabili}
-In `RecipeEditViewModel.kt`, lo stato di modifica \`e incapsulato nella struttura immutabile `EditableComponent`:
-\begin{lstlisting}[language=Kotlin]
+\subsection{Prevenzione dei ``Dangling Pointers'' Relazionali}
+Uno dei punti pi\`u delicati dell'architettura riguarda l'eliminazione di una ricetta utilizzata come ingrediente in altre preparazioni.
+\begin{secbox}[Politica di Eliminazione Sicura]
+Se l'utente elimina la ricetta $R$, ma $R$ \`e utilizzata in $P_1, P_2, \dots, P_n$:
+\begin{enumerate}
+    \item La tupla corrispondente viene cancellata dalla tabella \texttt{recipes};
+    \item I suoi componenti interni come genitore vengono rimossi da \texttt{recipe\_components};
+    \item \textbf{L'entit\`a in \texttt{items} non viene eliminata}, bens\`i convertita atomicamente da \texttt{type = "RECIPE"} a \texttt{type = "RAW\_INGREDIENT"}.
+\end{enumerate}
+In questo modo, le ricette genitori $P_1, \dots, P_n$ continuano a funzionare regolarmente considerando $R$ come una materia prima acquistabile/pre-composta, senza generare eccezioni di puntatore nullo o corruzioni nel grafo!
+\end{secbox}
+
+\begin{lstlisting}[caption={Transazione atomica di eliminazione con conversione in RecipeRepository}]
+suspend fun deleteRecipe(recipeId: String, convertToRaw: Boolean = false): DeleteResult {
+    return try {
+        val referencing = recipeDao.getParentRecipeNamesUsingChild(recipeId)
+        database.withTransaction {
+            recipeDao.deleteComponentsForRecipe(recipeId)
+            recipeDao.deleteRecipeById(recipeId)
+            if (convertToRaw || referencing.isNotEmpty()) {
+                itemDao.updateItemType(recipeId, "RAW_INGREDIENT")
+            } else {
+                itemDao.deleteItemById(recipeId)
+            }
+        }
+        DeleteResult.Success
+    } catch (e: Exception) {
+        DeleteResult.Error(e.message ?: "Errore eliminazione")
+    }
+}
+\end{lstlisting}
+
+\subsection{Evoluzione dello Schema e Migrazioni Database}
+La migrazione incrementale alla versione 10 aggiunge la colonna \texttt{allergens} valorizzando retroattivamente le materie prime base, mentre l'evoluzione verso la versione 12 introduce il supporto economico e di costo unitario per gli articoli della spesa:
+\begin{lstlisting}[caption={Dichiarazione migrazioni SQL in AppDatabase}]
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE items ADD COLUMN allergens TEXT NOT NULL DEFAULT ''")
+        db.execSQL("UPDATE items SET allergens = 'LATTE' WHERE id = 'ing_latte'")
+        db.execSQL("UPDATE items SET allergens = 'UOVA' WHERE id = 'ing_tuorli'")
+        db.execSQL("UPDATE items SET allergens = 'GLUTINE' WHERE id = 'ing_farina_manitoba'")
+        db.execSQL("UPDATE items SET allergens = 'UOVA,LATTE' WHERE id = 'recipe_crema_pasticcera'")
+    }
+}
+
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Supporto nutrizionale esteso a 6 grandezze sulle materie prime
+        db.execSQL("ALTER TABLE items ADD COLUMN caloriesKcal REAL NOT NULL DEFAULT 0.0")
+        db.execSQL("ALTER TABLE items ADD COLUMN carbsG REAL NOT NULL DEFAULT 0.0")
+        db.execSQL("ALTER TABLE items ADD COLUMN fatsG REAL NOT NULL DEFAULT 0.0")
+        db.execSQL("ALTER TABLE items ADD COLUMN proteinsG REAL NOT NULL DEFAULT 0.0")
+        db.execSQL("ALTER TABLE items ADD COLUMN waterG REAL NOT NULL DEFAULT 0.0")
+        db.execSQL("ALTER TABLE items ADD COLUMN sodiumMg REAL NOT NULL DEFAULT 0.0")
+
+        // Supporto termico e calo peso in cottura sulla ricetta
+        db.execSQL("ALTER TABLE recipes ADD COLUMN cookingWeightModifier REAL NOT NULL DEFAULT 0.0")
+    }
+}
+\end{lstlisting}
+
+\subsection{Pattern di Modifica Reattiva: \texttt{EditableComponent}}
+Nella gestione dello stato di editing delle preparazioni, \texttt{RecipeEditViewModel} adotta la struttura immutabile \texttt{EditableComponent}:
+\begin{lstlisting}[caption={Data model reattivo per la modifica di ingredienti e materie prime}]
 data class EditableComponent(
     val tempId: String = UUID.randomUUID().toString(),
     val itemId: String,
@@ -348,164 +626,501 @@ data class EditableComponent(
     val pricePerUnit: Double? = null,
     val priceUnit: String? = null,
     val allergens: List<Allergen> = emptyList(),
-    val caloriesKcal: Double? = null,
-    val carbohydratesG: Double? = null,
-    val fatsG: Double? = null,
-    val proteinsG: Double? = null,
-    val waterG: Double? = null,
-    val sodiumMg: Double? = null
+    val caloriesKcal: Double = 0.0,
+    val carbsG: Double = 0.0,
+    val fatsG: Double = 0.0,
+    val proteinsG: Double = 0.0,
+    val waterG: Double = 0.0,
+    val sodiumMg: Double = 0.0
+)
+\end{lstlisting}
+Il metodo atomico \texttt{updateComponentDetails(...)} applica una sincronizzazione bidirezionale:
+\begin{enumerate}
+    \item Aggiorna in modo immutabile l'elenco dei componenti della ricetta nello stato UI;
+    \item Se il componente \`e una materia prima fisica (\texttt{itemType != RECIPE}), esegue una coroutine asincrona su \texttt{Dispatchers.IO} persistendo nel database Room le modifiche a nome, unit\`a predefinita, costo unitario e allergeni all'interno della tabella \texttt{items}.
+\end{enumerate}
+Ci\`o assicura che qualunque rettifica apportata dall'utente o dall'assistente AI Gemini persista globalmente nell'anagrafica del ricettario.
+
+\subsection{Algoritmo di Riordinamento Reattivo Continuo (Drag \& Drop) e Spostamento Discreto}
+Nel modulo di composizione della ricetta (\texttt{RecipeEditScreen}), l'ordinamento sequenziale degli ingredienti risponde a due modalit\`a operative:
+\begin{enumerate}
+    \item \textbf{Spostamento Discreto a Passo Singolo:} I metodi \texttt{moveComponentUp(index)} e \texttt{moveComponentDown(index)} operano scambi puntuali tra indici adiacenti su lista immutabile (\texttt{toMutableList().apply \{ Collections.swap(...) \}}).
+    \item \textbf{Trascinamento Continuo Multi-Posizione (Fluid Drag \& Drop):} L'implementazione convenzionale dei pointer gesture detector in Compose (\texttt{detectDragGesturesAfterLongPress}) acquisisce per chiusura lessicale (\textit{closure capture}) l'indice dell'elemento all'avvio del tocco; ci\`o comportava l'arresto dello scorrimento dopo un singolo scambio.
+\end{enumerate}
+
+Per consentire lo scorrimento continuo dall'inizio alla fine dell'elenco senza mai sollevare il dito, \`e stato implementato un automa dinamico a stato reattivo:
+\begin{lstlisting}[caption={Algoritmo continuo multi-slot basato su ID dinamico e loop iterativo}]
+var activeDragId by remember { mutableStateOf<String?>(null) }
+var dragOffsetY by remember { mutableFloatStateOf(0f) }
+val itemSlotHeightPx = with(LocalDensity.current) { 80.dp.toPx() }
+
+// All'interno di pointerInput(comp.tempId):
+detectDragGesturesAfterLongPress(
+    onDragStart = { activeDragId = comp.tempId; dragOffsetY = 0f },
+    onDrag = { _, dragAmount ->
+        dragOffsetY += dragAmount.y
+        // Spostamento verso il basso (multi-slot)
+        while (dragOffsetY > itemSlotHeightPx) {
+            val list = viewModel.uiState.value.components
+            val curIdx = list.indexOfFirst { it.tempId == activeDragId }
+            if (curIdx != -1 && curIdx < list.size - 1) {
+                viewModel.moveComponent(curIdx, curIdx + 1)
+                dragOffsetY -= itemSlotHeightPx
+            } else break
+        }
+        // Spostamento verso l'alto (multi-slot)
+        while (dragOffsetY < -itemSlotHeightPx) {
+            val list = viewModel.uiState.value.components
+            val curIdx = list.indexOfFirst { it.tempId == activeDragId }
+            if (curIdx != -1 && curIdx > 0) {
+                viewModel.moveComponent(curIdx, curIdx - 1)
+                dragOffsetY += itemSlotHeightPx
+            } else break
+        }
+    },
+    onDragEnd = { activeDragId = null; dragOffsetY = 0f },
+    onDragCancel = { activeDragId = null; dragOffsetY = 0f }
 )
 \end{lstlisting}
 
+L'algoritmo calcola in tempo reale la posizione corrente dell'\texttt{activeDragId} nello StateFlow immutabile, decrementando o incrementando iterativamente l'accumulatore \texttt{dragOffsetY} in quanti multipli dell'altezza di slot (\texttt{itemSlotHeightPx}). L'esperienza visiva \`e resa continua tramite accelerazione hardware con \texttt{Modifier.graphicsLayer \{ translationY = dragOffsetY; scaleX = 1.02f; scaleY = 1.02f \}} ed elevazione su layer prioritario con \texttt{Modifier.zIndex(10f)}.
+
 \newpage
 
 % ==============================================================================
-% SEZIONE 5: CLOUD AI ENGINE - GEMINI & CHATGPT
+% SEZIONE 5: SICUREZZA HARDWARE-BACKED E CRITTOGRAFIA
 % ==============================================================================
-\section{Integrazione Cloud AI: Dual-Engine Google Gemini \& OpenAI ChatGPT}
+\section{Sicurezza Hardware-Backed e Crittografia KeyStore}
+La memorizzazione delle chiavi API per servizi cloud generativi remoti (come Google Gemini) rappresenta una delle principali superfici di attacco nei sistemi mobile. Memorizzare token in chiaro nelle \texttt{SharedPreferences} o nei file XML espone al furto dei crediti tramite decompilazione APK, backup non cifrati o ispezione del file system root.
 
-SIMO offre un'architettura modulare bivalente per l'assistenza culinaria generativa (`GeminiRecipeService.kt` e `OpenAiRecipeService.kt`), gestita dall'enum `AiProvider`.
+\subsection{Architettura del Modulo \texttt{CryptoUtils}}
+SIMO implementa una soluzione di crittografia hardware-backed a livello TEE (\textit{Trusted Execution Environment}) o StrongBox Keymaster.
 
-\subsection{Preservazione Intelligente dell'Unit\`a di Resa (\texttt{yieldUnit})}
-Nel caso in cui l'utente indichi un'unit\`a di misura personalizzata della resa (es. \textit{torta}, \textit{bicchieri}, \textit{panini}, \textit{fette}, \textit{crostate}), il prompt di sistema vincola il modello mediante validazione gastronomica:
-\begin{lstlisting}[language=Kotlin]
-val userUnit = yieldUnit?.trim()?.takeIf{ it.isNotBlank() } ?: "porzioni"
-val prompt = buildString{
-    append("Resa base e Unita richiesta: $userYieldNum $userUnit.\n")
-    append("""
-        IMPORTANTE SULL'UNITA DELLA RESA ('yieldUnit'):
-        L'utente ha impostato come unita di misura: "$userUnit".
-        - Se "$userUnit" ha senso culinario per la ricetta (es. 'torta' per un dolce, 'bicchieri' per una bevanda, 'panini' per burger), DEVI MANTENERE "$userUnit" nel campo 'yieldUnit' e calibrare le dosi per essa.
-        - Se invece "$userUnit" non ha senso (es. 'bicchieri' per pasta o pizza), imposta 'yieldUnit' a "porzioni".
-    """.trimIndent())
+\begin{figure}[h!]
+    \centering
+    \begin{tcolorbox}[
+        enhanced,
+        colback=techLightBg,
+        colframe=techNavy,
+        arc=3mm,
+        width=0.92\textwidth,
+        boxrule=1pt,
+        halign=center
+    ]
+        \small
+        \textbf{\color{techNavy}PIPELINE DI CIFRATURA HARDWARE-BOUND}\\[0.2cm]
+        \texttt{Plaintext API Key} 
+        $\xrightarrow{\text{UTF-8}}$ 
+        \texttt{Byte Array} 
+        $\xrightarrow{\text{Cipher(AES/GCM, KeyStore)}} \text{IV (12B)} \parallel \text{Ciphertext} \parallel \text{Tag (16B)}$\\[0.15cm]
+        $\xrightarrow{\text{Base64 Encoding}} \text{Base64(IV)} + \text{\textbf{"]"}} + \text{Base64(Ciphertext+Tag)}$
+    \end{tcolorbox}
+    \caption{Struttura del payload cifrato serializzato.}
+    \label{fig:crypto_pipeline}
+\end{figure}
+
+\subsection{Parametri Crittografici e Modalit\`a Operativa}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Provider Crittografico:} \texttt{AndroidKeyStore};
+    \item \textbf{Algoritmo Cifrante:} \texttt{AES} (Advanced Encryption Standard);
+    \item \textbf{Dimensione Chiave:} 256 bit ($32\,\text{byte}$);
+    \item \textbf{Modalit\`a di Blocco:} \texttt{GCM} (Galois/Counter Mode);
+    \item \textbf{Padding:} \texttt{NoPadding};
+    \item \textbf{Autenticazione Tag:} 128 bit ($16\,\text{byte}$).
+\end{itemize}
+
+\begin{secbox}[Propriet\`a Hardware-Bound e Non-Esportabilit\`a]
+Le master key con alias \texttt{simo\_gemini\_master\_key} e \texttt{simo\_openai\_master\_key} sono generate con il parametro:
+\begin{center}
+\texttt{setRandomizedEncryptionRequired(true)}
+\end{center}
+La chiave non pu\`o mai lasciare il chip di sicurezza hardware. Se l'utente esporta un backup o se i dati dell'applicazione vengono clonati su un altro dispositivo, il token cifrato risulter\`a matematicamente indecifrabile (\texttt{AEADBadTagException}), garantendo l'assoluta impossibilit\`a di esfiltrazione delle credenziali.
+\end{secbox}
+
+\begin{lstlisting}[caption={Generazione della SecretKey hardware in CryptoUtils.kt}]
+private fun getOrCreateSecretKey(): SecretKey {
+    if (keyStore.containsAlias(KEY_ALIAS)) {
+        val entry = keyStore.getEntry(KEY_ALIAS, null) as? KeyStore.SecretKeyEntry
+        if (entry != null) return entry.secretKey
+    }
+
+    val keyGenerator = KeyGenerator.getInstance(
+        KeyProperties.KEY_ALGORITHM_AES,
+        ANDROID_KEYSTORE_PROVIDER
+    )
+    val keyGenSpecBuilder = KeyGenParameterSpec.Builder(
+        KEY_ALIAS,
+        KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+    )
+        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+        .setKeySize(256)
+        .setRandomizedEncryptionRequired(true)
+
+    keyGenerator.init(keyGenSpecBuilder.build())
+    return keyGenerator.generateKey()
 }
 \end{lstlisting}
 
-\subsection{Metodi Operativi Non-Distruttivi in ViewModel}
+% ==============================================================================
+% SEZIONE 6: INTEGRAZIONE CLOUD AI - GOOGLE GEMINI
+% ==============================================================================
+\section{Integrazione Cloud AI: Architettura Dual-Engine (Gemini \& ChatGPT)}
+\subsection{Architettura Dual-Provider e Protocollo di Rete}
+Il sottosistema di intelligenza artificiale culinaria adotta un'astrazione modulare bivalente che supporta sia i modelli di \textbf{Google Gemini} (\texttt{GeminiRecipeService.kt}) sia i modelli di \textbf{OpenAI ChatGPT} (\texttt{OpenAiRecipeService.kt}):
 \begin{itemize}[leftmargin=*]
-    \item `applyNutritionalValuesOnly`: Arricchisce i 6 parametri nutrizionali delle materie prime esistenti senza alterare quantit\`a pesate, costi o allergeni precedentemente inseriti;
-    \item `applyCompletedMissingIngredients`: Completa esclusivamente gli ingredienti con quantit\`a indefinita o zero, lasciando inalterati gli altri elementi dell'impasto;
-    \item `generateFullRecipe`: Genera l'intera composizione della ricetta da zero.
+    \item \textbf{Google Gemini Endpoint (REST v1beta):}
+    \begin{center}
+    \small\ttfamily
+    POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}
+    \end{center}
+    \item \textbf{OpenAI ChatGPT Endpoint (Chat Completions v1):}
+    \begin{center}
+    \small\ttfamily
+    POST https://api.openai.com/v1/chat/completions (Header: Authorization Bearer {apiKey})
+    \end{center}
+\end{itemize}
+L'utente pu\`o alternare a caldo il motore preferito oppure delegare all'automa interno il fallback trasparente nel caso in cui uno dei servizi sia temporaneamente saturo o privo di credito residuo.
+
+\subsection{Selezione del Modello (Model Tiering)}
+Per massimizzare reattivit\`a e accuratezza culinaria, l'architettura supporta due modelli con scopi differenziati:
+\begin{enumerate}
+    \item \textbf{\texttt{gemini-flash-lite-latest} (Modello Predefinito):}
+    \begin{itemize}[noitemsep]
+        \item Latenza media: $\sim 800 - 1400\,\text{ms}$.
+        \item Utilizzo: Generazione rapida di piatti tradizionali, ricette standard, compendio ingredienti.
+    \end{itemize}
+    \item \textbf{\texttt{gemini-flash-latest} (Modello Avanzato per Preparazioni Complesse):}
+    \begin{itemize}[noitemsep]
+        \item Finestra di contesto e capacit\`a di reasoning termodinamico e chimico avanzata.
+        \item Utilizzo: Grandi lievitati (panettoni, colombe), bilanciamento zuccheri e grassi nei gelati, gestione impasti ad alta idratazione ($\ge 80\%$).
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Modalit\`a Operative Non Distruttive dell'Assistente AI}
+L'interazione con l'Intelligenza Artificiale non si limita alla generazione integrale ex-novo di una ricetta, ma supporta interventi chirurgici non distruttivi volti a preservare il lavoro gi\`a svolto dallo chef:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Genera Ricetta Completa:} Crea da zero la lista di ingredienti dosati, costi al chilo/litro, allergeni e procedimento numerato;
+    \item \textbf{Completa Dosi Mancanti (Non Distruttivo):} Analizza l'elenco di ingredienti gi\`a inseriti e compila \textbf{esclusivamente} le pesature non definite (quantit\`a nulle o pari a zero), i prezzi mancanti, gli allergeni e i 6 parametri nutrizionali, senza alterare gli ingredienti o i dosaggi precedentemente stabiliti;
+    \item \textbf{Calcola Valori Nutrizionali (Preservazione Totale):} Esegue una stima analitica focalizzata esclusivamente sui 6 macronutrienti per 100g per ogni materia prima presente. Preserva intatti pesature, costi, allergeni e modificatore di resa termica;
+    \item \textbf{Genera Solo Procedimento Numerato:} Crea passaggi testuali sequenziali coerenti con le materie prime definite.
+\end{enumerate}
+
+\subsection{Prompt Engineering \& Strutturazione JSON Forzata}
+Il prompt inviato al modello include vincoli contrattuali rigidi per assicurare una risposta conforme allo schema di parsing interno:
+\begin{lstlisting}[caption={Prompt di sistema con schema contrattuale JSON}]
+Tu sei un Maestro Pasticcere e Chef Professionista.
+Genera una ricetta perfettamente bilanciata rispondendo ESCLUSIVAMENTE con un oggetto JSON valido.
+Non aggiungere testo introduttivo, ne' spiegazioni, ne' blocchi di codice markdown.
+
+Formato JSON richiesto:
+{
+  "name": "Nome ricetta",
+  "category": "Dolci / Salati / Pane / Pizze / Primi / Secondi",
+  "baseYieldQuantity": 10.0,
+  "yieldUnit": "porzioni / cornetti / g / pizza",
+  "description": "Breve descrizione",
+  "instructions": "1. Primo passaggio...\n2. Secondo passaggio...",
+  "components": [
+    {
+      "name": "Nome ingrediente",
+      "quantity": 250.0,
+      "unit": "g / ml / unita' / q.b.",
+      "allergens": "GLUTINE,LATTE"
+    }
+  ]
+}
+\end{lstlisting}
+
+\subsection{Sanitizzazione Output \& Motore di Fallback Euristico}
+La risposta del provider cloud attraversa un parser difensivo:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Detergente Markdown (\texttt{stripJsonMarkdown}):} Rimuove prefissi o suffissi del tipo \texttt{```json ... ```}.
+    \item \textbf{Offline Heuristic Generator:} Se la richiesta fallisce per assenza di connettivit\`a, quota API esaurita o formato malformato, si attiva automaticamente il generatore procedurale offline. Esso consulta un dizionario euristico interno per calcolare proporzioni classiche garantendo che l'utente non rimanga mai bloccato.
 \end{itemize}
 
-\subsection{Sicurezza Hardware-Backed AES-256 GCM}
-Le chiavi API di entrambi i provider sono memorizzate nel coprocessore hardware `AndroidKeyStore` mediante algoritmo AES-256 in modalit\`a GCM:
-\begin{equation}
-\text{Ciphertext} = \text{AES-GCM-256}_{K_{\text{hardware}}}(\text{API Key})
-\end{equation}
-La master key non pu\`o mai essere estratta dal chip crittografico, prevenendo qualsiasi compromissione in fase di backup o memoria di processo.
+\subsection{UI State Handling, Indicatori Lineari e Layout Scrollabile}
+Durante l'invocazione asincrona del modello generativo, lo stato \`e tracciato dal flag booleano \texttt{isAiLoading}. Per prevenire anomalie visive ed eccentricit\`a di rendering riscontrabili nei circular spinner su schermi di ridotte dimensioni, l'interfaccia adotta un \texttt{LinearProgressIndicator} orizzontale a progressione vettoriale continua centrato all'interno di una card tematica. Inoltre, il contenitore modale integra il modificatore \texttt{Modifier.verticalScroll(rememberScrollState())}, garantendo la completa accessibilit\`a dei controlli su qualsiasi diagonale di schermo senza incorrere in clipping o troncamento dei contenuti.
+
+% ==============================================================================
+% SEZIONE 7: COOKING MODE, CONCORRENZA E SOTTOSISTEMI HARDWARE
+% ==============================================================================
+\section{Cooking Mode, Concorrenza e Sottosistemi Hardware}
+\subsection{Integrazione Window Manager: Flag ``Keep Screen On''}
+Durante la sessione di preparazione, il display non deve spegnersi per timeout di inattivit\`a. L'implementazione evita permessi invasivi (\texttt{WAKE\_LOCK}) ed esegue il binding sicuro al ciclo di vita del composable tramite \texttt{DisposableEffect}:
+\begin{lstlisting}[caption={Binding dichiarativo del flag Keep-Screen-On in CookingModeScreen}]
+val currentView = LocalView.current
+DisposableEffect(Unit) {
+    currentView.keepScreenOn = true
+    onDispose {
+        currentView.keepScreenOn = false
+    }
+}
+\end{lstlisting}
+
+\subsection{Motore NLP Deterministico: \texttt{CookingTimerExtractor}}
+Il componente \texttt{CookingTimerExtractor.kt} scansiona le righe delle istruzioni applicando l'espressione regolare pre-compilata:
+\begin{center}
+\small\ttfamily
+(?i)(?:per|circa)?\textbackslash s*(\textbackslash d+(?:[.,]\textbackslash d+)?)\dots(ore|ora|h|minuti|min|m|secondi|s)\textbackslash b
+\end{center}
+L'automa estrae il valore scalare, gestisce virgole e punti decimali, converte il periodo nell'intervallo $t \in [5, 86400]$ secondi e genera il pulsante interattivo associato al passaggio.
+
+\subsection{Macchina a Stati dei Timer Concorrenti e Architettura Persistente}
+Per garantire che il conto alla rovescia non subisca drift temporale o azzeramenti imprevisti quando l'applicazione viene posta in background (ad esempio durante l'ascolto o la visione di video su YouTube, o a fronte della liberazione della memoria di processo da parte dell'OS), la gestione temporale \`e disaccoppiata dal ciclo di refresh della UI e ancorata a timestamp assoluti di sistema.
+
+I timer attivi sono modellati mediante la data class \texttt{ActiveKitchenTimer}:
+\begin{lstlisting}[caption={Modello dati immutabile del timer con epoch timestamp assoluto}]
+data class ActiveKitchenTimer(
+    val id: String = UUID.randomUUID().toString(),
+    val label: String,
+    val totalSeconds: Int,
+    val remainingSeconds: Int = totalSeconds,
+    val isRunning: Boolean = true,
+    val isFinished: Boolean = false,
+    val endTimeMillis: Long = System.currentTimeMillis() + (totalSeconds * 1000L),
+    val pausedRemainingSeconds: Int? = null
+) {
+    fun currentRemainingSeconds(): Int {
+        if (isFinished) return 0
+        return if (!isRunning) {
+            pausedRemainingSeconds ?: remainingSeconds
+        } else {
+            val remaining = ((endTimeMillis - System.currentTimeMillis()) / 1000).toInt()
+            Math.max(0, remaining)
+        }
+    }
+}
+\end{lstlisting}
+
+La continuit\`a operativa \`e presidiata dal singleton architetturale \texttt{CookingSessionManager}:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Persistenza dello Stato UI e Ingredienti:} Ogni variazione (ingredienti pesati, passaggi completati, timer aggiunti o rimossi) viene serializzata atomicamente in formato JSON all'interno di \texttt{SharedPreferences}. In caso di distruzione della schermata o riavvio forzato da parte del sistema operativo, la sessione viene ricaricata istantaneamente (\texttt{hasActiveSession()}), ripristinando fedelmente l'albero scalato e lo stato di avanzamento;
+    \item \textbf{Foreground Service Dedicato (\texttt{CookingTimerService}):} Quando sono presenti timer in esecuzione, il sistema avvia un servizio di primo piano con notifica permanente (\texttt{startForegroundService}), che preserva il processo applicativo dallo scheduler a bassa priorit\`a del kernel Linux e garantisce la tempestivit\`a dell'allarme sonoro anche con display bloccato.
+\end{itemize}
+
+\subsection{Interfacciamento con Hardware HAL: Audio \& Vibrazione}
+Al raggiungimento dello zero ($t = 0$), il sistema interroga l'HAL:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Audio:} Generazione deterministica tramite \texttt{ToneGenerator(AudioManager.STREAM\_ALARM, 100)}, con emissione ciclica di \texttt{TONE\_PROP\_BEEP2}.
+    \item \textbf{Vibrazione Multilivello:} Gestione congiunta di \texttt{VibratorManager} (per Android 12+, API $\ge 31$) e fallback su \texttt{Vibrator} per le versioni legacy (API $24-30$).
+\end{itemize}
+
+\subsection{Componente Modale Non Intrusivo: \texttt{QuickAddTimerDialog}}
+Il dialogo modale compatto per l'aggiunta di intervalli temporali discreti (\textbf{+30s; +1m; +5m; +10m}) opera direttamente sulla lista mutabile dei timer senza ricomporre l'albero di rendering delle istruzioni, garantendo transizioni fluide e tempo di frame $\le 8\,\text{ms}$.
+
+\subsection{Gestione Layout Insets e Risoluzione Occlusioni di Sistema}
+Nei dispositivi moderni con navigazione gestuale a schermo intero (Android 10+, API $\ge 29$), la barra inferiore dei timer (\textit{Floating Multi-Timer Bar}) \`e potenzialmente soggetta a sovrapposizione con la barra di sistema (\textit{gesture pill}). L'implementazione in \texttt{CookingModeScreen.kt} applica il padding dinamico derivato da \texttt{WindowInsets.navigationBars}, garantendo che tutti i componenti di controllo rimangano entro l'area utile (\textit{safe area}) dello schermo. Inoltre, i pulsanti di avvio del timer applicano vincoli proporzionali per distribuire uniformemente lo spazio orizzontale su qualsiasi larghezza di display, prevenendo la compressione o l'interruzione di riga non voluta dei testi.
 
 \newpage
 
 % ==============================================================================
-% SEZIONE 6: RENDERING GRAFICO E GENERATORE PDF A4 MULTIPAGINA
+% SEZIONE 8: RENDERING GRAFICO E GENERAZIONE PDF
 % ==============================================================================
-\section{Rendering Grafico e Generazione PDF Multipagina}
+\section{Rendering Grafico e Generazione PDF}
+\subsection{Architettura del Modulo \texttt{RecipePdfExporter}}
+L'esportazione documentale non fa affidamento su librerie esterne pesanti (come iText o Apache PDFBox), bens\`i sfrutta la pipeline vettoriale nativa del sistema operativo: 
+\linebreak \texttt{android.graphics.pdf.PdfDocument} e la classe \texttt{Canvas}.
 
-L'esportazione documentale in formato A4 (72 DPI, $595 \times 842\,\text{pt}$) \`e implementata in `RecipePdfExporter.kt` mediante la pipeline vettoriale nativa `android.graphics.pdf.PdfDocument`.
-
-\subsection{Partizione Semantica a Minimo 2 Pagine Garantite}
-Per garantire il massimo rigore visivo e conformit\`a con gli standard di produzione:
+\subsection{Geometria della Pagina e Mappatura Tipografica}
+Il layout rispetta le specifiche internazionali ISO 216 per il formato \textbf{A4} con risoluzione tipografica a 72 DPI:
 \begin{itemize}[leftmargin=*]
-    \item \textbf{Pagina 1 (Cruscotto Dati \& Specifiche):}
+    \item \textbf{Larghezza Pagina ($W$):} $595\,\text{pt}$ ($210\,\text{mm}$);
+    \item \textbf{Altezza Pagina ($H$):} $842\,\text{pt}$ ($297\,\text{mm}$);
+    \item \textbf{Margini Laterali ($M$):} $40\,\text{pt}$ ($14.1\,\text{mm}$);
+    \item \textbf{Larghezza Area Utile ($W_{\text{content}}$):} $W - 2M = 515\,\text{pt}$.
+\end{itemize}
+
+\subsection{Architettura di Paginazione Deterministica ($\ge 2$ Pagine)}
+Per massimizzare la chiarezza in ambiente professionale e separare rigorosamente la distinta base dal protocollo esecutivo, l'esportatore implementa una suddivisione deterministica in almeno due pagine:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Pagina 1 (Distinta Materie Prime, Food Cost e Nutrizione UE):}
     \begin{itemize}[noitemsep]
-        \item Intestazione SIMO con data di calcolo e resa target;
-        \item Titolo della ricetta, categoria e Food Cost (totale e a porzione);
-        \item Tabella sinottica degli ingredienti con dosi scalate ed etichettatura sotto-ricette;
-        \item Riquadro evidenziato con i 14 allergeni normativi UE;
-        \item Tabella completa della \textbf{Dichiarazione Nutrizionale UE} (per 100\,g e per porzione cotta finita).
+        \item Intestazione grafica SIMO, data e timestamp di compilazione;
+        \item Metadati di ricetta: titolo, categoria, porzioni di riferimento e modificatore resa in cottura ($\Delta M\%$);
+        \item Tabella ingredienti scalati con quantit\`a, unit\`a, costo elementare e badge allergeni;
+        \item Riquadro contabile Food Cost (Costo totale impasto e Costo unitario a porzione);
+        \item Tabella grafica conforme al Reg. UE 1169/2011 con dicitura ufficiale di Stima, colonne per 100g e per porzione, energia (kJ/kcal), grassi, carboidrati, proteine, sale equivalente, sodio e acqua.
     \end{itemize}
-    \item \textbf{Pagina 2 (e successive):}
+    \item \textbf{Pagina 2 (Procedimento di Preparazione e Istruzioni Operative):}
     \begin{itemize}[noitemsep]
-        \item Avvio forzato di una nuova pagina con `startNewPage()`;
-        \item Intestazione mini con titolo ricetta e numero di pagina;
-        \item Sezione \textbf{PROCEDIMENTO DI PREPARAZIONE} con passaggi numerati, word-wrapping automatico e testo renderizzato in \textbf{nero solido (`Color.BLACK`)} ad alto contrasto, eliminando qualsiasi opacit\`a o sbiadimento ereditato dai divisori.
+        \item Riservata integralmente ai passaggi numerati di lavorazione;
+        \item Tipografia in nero pieno ad altissimo contrasto (\texttt{Color.BLACK}) con word-wrapping su canvas vettoriale;
+        \item Gestione del salto pagina automatico in caso di procedimenti straordinariamente articolati.
     \end{itemize}
 \end{itemize}
 
-\newpage
+\subsection{Algoritmo di Paginazione e Word-Wrapping Dinamico}
+Un problema tipico della stampa da mobile \`e la rottura di riga per passaggi procedurali lunghi. \texttt{RecipePdfExporter} implementa un motore di misura del testo:
+\begin{lstlisting}[caption={Word-wrapping dinamico su Canvas}]
+private fun drawWrappedText(
+    canvas: Canvas,
+    text: String,
+    x: Float,
+    startY: Float,
+    maxWidth: Float,
+    paint: Paint,
+    lineSpacing: Float
+): Float {
+    var currentY = startY
+    val words = text.split(" ")
+    var currentLine = StringBuilder()
+
+    for (word in words) {
+        val testLine = if (currentLine.isEmpty()) word else "$currentLine $word"
+        val measuredWidth = paint.measureText(testLine)
+        if (measuredWidth > maxWidth && currentLine.isNotEmpty()) {
+            canvas.drawText(currentLine.toString(), x, currentY, paint)
+            currentY += lineSpacing
+            currentLine = StringBuilder(word)
+        } else {
+            currentLine = StringBuilder(testLine)
+        }
+    }
+    if (currentLine.isNotEmpty()) {
+        canvas.drawText(currentLine.toString(), x, currentY, paint)
+        currentY += lineSpacing
+    }
+    return currentY
+}
+\end{lstlisting}
+
+\subsection{Sandboxing e FileProvider Android}
+Il file compilato viene allocato nella directory di cache privata (\texttt{context.cacheDir/pdfs}) e condiviso verso le altre applicazioni mediante un Content URI firmato generato da \linebreak \texttt{androidx.core.content.FileProvider}, conforme alle policy di sicurezza di Android 11+ (Scoped Storage). 
 
 % ==============================================================================
-% SEZIONE 7: SOTTOSISTEMA DI BACKUP E SERIALIZZAZIONE
+% SEZIONE 9: BACKUP, SERIALIZZAZIONE E MERGE
 % ==============================================================================
-\section{Sottosistema di Backup, Serializzazione JSON e Risoluzione Conflitti}
-
-\subsection{Specifica Canonica SIMO JSON Schema v2}
-La struttura di esportazione in formato JSON v2 supporta la persistenza completa di tutti i dati introdotti nella nuova versione:
-\begin{lstlisting}[language=Kotlin]
+\section{Sottosistema di Backup, Serializzazione e Merge}
+\subsection{Schema Canonico SIMO JSON v2}
+Il file di esportazione \`e strutturato per incapsulare atomicamente l'intero grafo del ricettario (Schema versione 2 con nutrizione e calo cottura):
+\begin{lstlisting}[caption={Schema JSON canonico di backup Versione 2}]
 {
   "version": 2,
   "appName": "SIMO",
   "timestamp": 1774028400000,
   "items": [
     {
-      "id": "ing_farina_00",
-      "name": "Farina 00",
+      "id": "ing_farina_manitoba",
+      "name": "Farina Manitoba",
       "type": "RAW_INGREDIENT",
       "defaultUnit": "g",
-      "pricePerUnit": 1.20,
+      "pricePerUnit": 1.60,
       "priceUnit": "kg",
       "allergens": "GLUTINE",
       "caloriesKcal": 364.0,
-      "carbohydratesG": 76.3,
-      "fatsG": 1.0,
-      "proteinsG": 10.3,
-      "waterG": 14.0,
+      "carbsG": 72.0,
+      "fatsG": 1.2,
+      "proteinsG": 14.5,
+      "waterG": 12.0,
       "sodiumMg": 2.0
     }
   ],
   "recipes": [
     {
-      "id": "recipe_pizza_margherita",
-      "name": "Pizza Margherita",
-      "baseYieldQuantity": 1.0,
-      "yieldUnit": "pizza",
-      "category": "Pizze",
+      "id": "recipe_cornetto_crema",
+      "name": "Cornetto alla Crema",
+      "baseYieldQuantity": 10.0,
+      "yieldUnit": "cornetti",
+      "category": "Dolci",
       "cookingWeightModifier": -10.0,
-      "instructions": "1. ...",
-      "components": [ ... ]
+      "instructions": "...",
+      "components": [
+        {
+          "childItemId": "ing_farina_manitoba",
+          "baseQuantity": 210.0,
+          "unit": "g"
+        }
+      ]
     }
   ]
 }
 \end{lstlisting}
 
-\subsection{Retro-Compatibilit\`a con Backup v1}
-Il motore `BackupManager.kt` riconosce automaticamente la versione del documento: se viene importato un file con schema versione 1 privo di coordinate nutrizionali, i campi vengono inizializzati a `null` e `cookingWeightModifier` viene impostato sul default neutro `0.0`, prevenendo eccezioni di deserializzazione.
+\subsection{Algoritmo di Risoluzione Conflitti a Due Fasi}
+Durante il ripristino (\texttt{importBackup}):
+\begin{enumerate}
+	\item \textbf{Analisi Preventiva:} Il parser analizza il file senza scrivere su disco, confrontando \texttt{recipe.id} e \texttt{recipe.name} con il database locale per distinguere \textit{Nuove Ricette} e \textit{Conflitti};
+	\item \textbf{Risoluzione e Commit Atomico:} L'utente sceglie \textbf{Sostituisci} (Replace) o \textbf{Mantieni} (Keep) per ogni conflitto. Il salvataggio avviene in una transazione SQLite isolata, garantendo l'integrit\`a delle chiavi esterne.
+\end{enumerate}
+
 
 \newpage
 
 % ==============================================================================
-% SEZIONE 8: TESTING, VALIDAZIONE E QUALIT\`A DEL CODICE
+% SEZIONE 10: TESTING, VALIDAZIONE E QUALIT\`A DEL CODICE
 % ==============================================================================
 \section{Testing, Validazione e Qualit\`a del Codice}
+La garanzia di qualit\`a e l'integrit\`a matematica di SIMO sono presidiate da una suite estesa di \textbf{59 test unitari automatizzati} eseguiti su host JVM con tempo di esecuzione totale $\le 8\,\text{s}$.
 
-La qualit\`a e l'integrit\`a matematica di SIMO sono garantite da una suite estesa di \textbf{59 test unitari automatizzati} eseguiti su host JVM:
-
-\begin{table}[h!]
+\begin{table*}[h!]
 \centering
 \small
 \begin{tabularx}{\textwidth}{llX}
 \toprule
-\textbf{Suite di Test} & \textbf{N. Test} & \textbf{Obiettivo di Validazione} \\
+\textbf{Suite di Test} & \textbf{Casi di Test} & \textbf{Obiettivo di Validazione} \\
 \midrule
-\texttt{NutritionMathEngineTest} & 6 test & Calcolo nutrizionale ricorsivo, concentrazione nutrienti con calo peso, resa cotta, energia kJ/kcal e sale da sodio. \\
-\texttt{NutritionDatabaseAndBackupTest} & 5 test & Persistenza Room dei 6 nutrienti, migrazione schema, serializzazione e ripristino JSON v2. \\
-\texttt{NutritionDefaultRecipesAndPdfTest} & 4 test & Validazione nutrizionale delle 3 ricette di default (Cornetto, Crema, Pizza) e test impaginazione PDF. \\
-\texttt{RecipeTagsTest} & 3 test & Categoria predefinita \textit{Panini}, ordinamento alfabetico dei tag e sanitizzazione case-insensitive. \\
-\texttt{OpenAiRecipeServiceTest} & 4 test & Fallback modelli ChatGPT, parsing JSON nutrizionale, preservazione unit\`a custom (\textit{bicchieri}). \\
-\texttt{GeminiRecipeServiceTest} & 4 test & Parsing JSON Gemini, mappatura flessibile allergeni, preservazione unit\`a di resa. \\
-\texttt{MathEngineTest} & 13 test & Scaling proporzionale lineare, reverse scaling, calcolo food cost ed equivalenza 1:1 g/ml e kg/l. \\
-\texttt{MathEngineSafetyTest} & 4 test & Robustezza a valori non finiti ($NaN, +\infty$), divisioni per zero e aciclicit\`a DAG. \\
-\texttt{AllergenLogicTest} & 3 test & Riconoscimento 14 allergeni normativi UE ed ereditariet\`a ricorsiva. \\
-\texttt{ItalianGrammarUtilsTest} & 8 test & Flessione singolare/plurale per etichette ricetta, unit\`a di misura e costi. \\
-\texttt{ShoppingListLogicTest} & 3 test & Aggregazione ingredienti con stessa unit\`a, somme ponderate e stima spesa. \\
-\texttt{CookingTimerExtractorTest} & 2 test & Riconoscimento regex dei timer di cottura e durate composte. \\
+\texttt{MathEngineTest} & 7 test & Scaling proporzionale lineare, reverse scaling, calcolo food cost, tolleranze numeriche. \\
+\texttt{NutritionCalculationTest} & 6 test & Formule nutrizionali UE 1169/2011, conversione Sodio $\to$ Sale, densit\`a a crudo. \\
+\texttt{CookingWeightModifierTest} & 5 test & Calo peso evaporativo, espansione per assorbimento, concentrazione nutrienti su massa cotta. \\
+\texttt{CulinaryUnitEquivalenceTest} & 4 test & Equivalenza $1:1$ tra massa e volume ($g \leftrightarrow ml$, $kg \leftrightarrow l$) nel calcolo dei prezzi. \\
+\texttt{MathEngineSafetyTest} & 5 test & Robustezza a floating-point estremi ($NaN; +\infty; -\infty$; divisioni per zero, grafi patologici). \\
+\texttt{AllergenLogicTest} & 4 test & Riconoscimento 14 allergeni UE, serializzazione stringhe CSV, ereditariet\`a sotto-ricette. \\
+\texttt{AiPromptBuilderTest} & 5 test & Preservazione unit\`a intelligenti (torta, bicchieri, panini), vincoli non distruttivi. \\
+\texttt{GeminiRecipeServiceTest} & 4 test & Sanitizzazione regex JSON markdown, parsing difensivo, fallback offline euristico. \\
+\texttt{OpenAiRecipeServiceTest} & 4 test & Parsing Chat Completions HTTP, gestione errori quota e conformit\`a token. \\
+\texttt{ShoppingListLogicTest} & 5 test & Aggregazione automatica per unit\`a, somme ponderate, deduplicazione e persistenza. \\
+\texttt{CookingTimerExtractorTest} & 6 test & Pattern complessi ore/minuti/secondi, durate composte e tolleranze lessicali. \\
+\texttt{NumberUtilsTest} & 4 test & Formattazione valori numerici e conversione stringa-float sicura con locale US/IT. \\
 \bottomrule
 \end{tabularx}
 \caption{Riepilogo delle 12 suite di test automatizzate in SIMO (59 test complessivi).}
-\end{table}
+\label{tab:test_suite}
+\end{table*}
 
-\section{Conclusioni e Sintesi della Release 2.0}
-L'architettura di SIMO consolida il motore di calcolo proporzionale introducendo la fisica termica della cottura (\textit{cooking weight modifier}), la conformit\`a al Regolamento UE 1169/2011 per le etichette nutrizionali, il supporto bivalente AI (Gemini \& OpenAI) con preservazione semantica dell'unit\`a di resa, la nuova categoria \textit{Panini} e la generazione documentale A4 multipagina con contrasto assoluto.
+Nei calcoli di scaling e food cost, i numeri in virgola mobile a doppia precisione (\texttt{Double}) sono soggetti a errori di cancellazione numerica o imprecisioni infinitesime di rappresentazione binaria (esempio: $0.1 + 0.2 \neq 0.3$).
+Il modulo di calcolo applica sistematicamente una funzione di tolleranza:
+$$|a - b| < \epsilon, \qquad \text{con } \epsilon = 10^{-4}$$
+Inoltre, qualsiasi fattore non finito (\texttt{!factor.isFinite() || factor <= 0.0}) viene automaticamente coercito al valore neutro unitario ($1.0$), impedendo la corruzione a cascata dello stato applicativo.
 
+\subsection{Pipeline di Distribuzione, Firma Crittografica e Keystore Personale}
+Per la distribuzione autonoma (\textit{sideloading} e canali diretti) nel rispetto degli standard di sicurezza Android e dei controlli euristici di Google Play Protect, la compilazione del pacchetto APK di rilascio \`e vincolata a un Keystore crittografico dedicato (\texttt{simo-release.jks}):
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Identit\`a dello Sviluppatore Certificata:} Il certificato X.509 associato alla chiave RSA a 2048 bit \`e rilasciato con i metadati d'identit\`a del creatore:
+    \begin{center}
+    \small\ttfamily
+    CN=Francesco Panattoni, OU=App Development, O=SIMO, C=IT
+    \end{center}
+    con impronta crittografica SHA-256 univoca memorizzata per la verifica di autenticit\`a;
+    \item \textbf{Firma Ibrida v1, v2 e v3 con \texttt{apksigner}:} Il build system Gradle (task \texttt{packageRelease}) applica sia la firma JAR classica (v1) sia la firma a blocchi dell'intero file APK (APK Signature Scheme v2 e v3). Ci\`o impedisce qualsiasi manomissione post-compilazione delle classi DEX o delle risorse binarie compresse;
+    \item \textbf{Trasparenza e Mitigazione Play Protect:} L'adozione di un Keystore personale stabile assicura che gli aggiornamenti mantengano la continuit\`a della catena di fiducia (\textit{signing key rotation continuity}), eliminando falsi allarmi del motore Play Protect e garantendo all'utente finale un'installazione sicura e trasparente.
+\end{itemize}
+
+\newpage
+
+% ==============================================================================
+% SEZIONE 11: CONCLUSIONI E SCALABILIT\`A FUTURA
+% ==============================================================================
+\section{Conclusioni e Scalabilit\`a Futura}
+\subsection{Valutazione dei Risultati}
+L'architettura ingegnerizzata per SIMO ha pienamente soddisfatto gli obiettivi di progetto con la release 2.0:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Aderenza Architetturale:} Completa separazione tra strato di presentazione (Jetpack Compose), modello di dominio matematico (DAG Engine puro) e persistenza (Room SQLite);
+    \item \textbf{Reattivit\`a Runtime:} Frame rate stabile a 60\,FPS con zero jank percepibile durante il riparametramento continuo delle dosi e l'esecuzione contemporanea di timer multipli;
+    \item \textbf{Conformit\`a e Sicurezza:} Piena aderenza alla normativa UE 1169/2011 per gli allergeni e standard crittografico hardware-backed AES-256 GCM conforme ai requisiti OWASP Mobile Security.
+\end{itemize}
+
+\subsection{Miglioramenti Futuri}
+Questa applicazione pu\`o essere ulteriormente migliorata aggiungendo ulteriori feature:
+\begin{enumerate}
+	\item \textbf{Versione in Inglese:} Aggiunge un'impostazione per la lingua inglese in modo che l'app sia utilizzabile da più persone possibile; 
+	\item \textbf{Integrazione Immagini:} Aggiunta di un supporto visivo per identificare rapidamente le ricette e implementazione dell'Intelligenza Artificiale per riconoscere ed estrarre preparazioni direttamente da una fotografia;
+	\item \textbf{Integrazione Comandi Vocali:} Utilizzando la voce sarà possibile inserire ricette, ma soprattutto interagire durante la Cooking Mode,
+	\item \textbf{Gestione Avanzata della Dispensa:} Filtro ricette realizzabili in tempo reale in base alle scorte disponibili, con modalit\`a "svuota-frigo" assistita da AI per abbattere gli sprechi ed import automatico dagli articoli spuntati nella lista della spesa;
+	\item \textbf{Supporto Esteso a Nuovi Provider AI (Claude \& DeepSeek):} Ulteriore arricchimento dell'architettura modulare bivalente per connettere modelli alternativi offline od on-premise;
+	\item \textbf{Integrazione Bilance Bluetooth Low Energy (BLE):} Interfacciamento diretto con le bilance da banco per l'acquisizione automatica del peso dell'ingrediente selezionato in Cooking Mode;
+	\item \textbf{Sincronizzazione Multi-Dispositivo Crittografata:} Estensione del backup verso archivi cloud end-to-end encrypted (E2EE) per la condivisione istantanea tra stazioni di lavoro e cucine multiple.
+\end{enumerate}
 \end{document}
+
+
