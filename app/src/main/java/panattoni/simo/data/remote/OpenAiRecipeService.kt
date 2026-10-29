@@ -90,6 +90,10 @@ class OpenAiRecipeService{
             Il tuo compito è assistere gli utenti nella creazione e nel perfezionamento di ricette professionali per l'app "SIMO".
             
             REGOLE FONDAMENTALI:
+            0. VALORI IL PIÙ REALISTICI POSSIBILE:
+               - Ogni singolo dato (grammature, costi unitari di mercato italiano, valori nutrizionali per 100g, umidità residua, calo o resa in cottura) DEVE essere il più realistico, autentico e affidabile possibile.
+               - Basati rigorosamente sulla realtà gastronomica professionale e sui dati scientifici ufficiali (tabelle CREA / USDA).
+               - Evita tassativamente cifre esagerate, arbitrarie, sproporzionate o non calibrate.
             1. DOSI E PESI:
                - Usa grammature realistiche, tonde e calibrate (per grammi 'g' e millilitri 'ml' preferisci multipli di 5 o 10).
                - Per ingredienti discreti usa 'unità' o 'pz' con numeri interi (es. 2 unità).
@@ -172,7 +176,7 @@ class OpenAiRecipeService{
     }
 
     /**
-     * Completa ingredienti mancanti o senza dose bilanciandoli.
+     * Completa ingredienti mancanti o senza dose bilanciandoli, SENZA aggiungere né rimuovere ingredienti.
      */
     suspend fun completeMissingIngredients(
         apiKey: String,
@@ -200,11 +204,13 @@ class OpenAiRecipeService{
             }
             append("""
                 COMPITI RICHIESTI:
-                1. Mantieni tutti gli ingredienti esistenti.
+                1. NON aggiungere nuovi ingredienti e NON rimuovere alcuno degli ingredienti inseriti. Devi elaborare ESCLUSIVAMENTE la lista fornita.
                 2. Se la quantità era 'MANCANTE' o pari a zero, calcola la quantità ('quantity') e unità ('unit') ideale e perfettamente bilanciata per una resa di $baseYield $yieldUnit.
-                3. Aggiungi eventuali ingredienti fondamentali mancanti per completare la preparazione professionale (es. sale, lievito, aromi).
+                3. Se la quantità era già presente e valida (> 0), mantienila intatta.
                 4. Assegna a OGNI ingrediente un prezzo unitario realistico di mercato ('pricePerUnit' e 'priceUnit').
                 5. Identifica con precisione assoluta gli allergeni UE per ogni ingrediente.
+                6. Stima con precisione scientifica i 6 valori nutrizionali per 100g ('caloriesKcal', 'carbohydratesG', 'fatsG', 'proteinsG', 'waterG', 'sodiumMg') per ogni ingrediente.
+                7. Genera i passaggi numerati del procedimento (1., 2...) menzionando gli ingredienti presenti.
                 
                 Rispondi con un JSON conforme alla struttura:
                 {
@@ -212,8 +218,22 @@ class OpenAiRecipeService{
                   "baseYield": ${baseYield.toDoubleOrNull() ?: 4.0},
                   "yieldUnit": "$yieldUnit",
                   "ingredients": [
-                    { "name": "Ingrediente", "quantity": 100.0, "unit": "g", "pricePerUnit": 1.50, "priceUnit": "kg", "allergens": [] }
-                  ]
+                    {
+                      "name": "Nome ingrediente",
+                      "quantity": 100.0,
+                      "unit": "g",
+                      "pricePerUnit": 1.50,
+                      "priceUnit": "kg",
+                      "allergens": ["GLUTINE"],
+                      "caloriesKcal": 364.0,
+                      "carbohydratesG": 76.3,
+                      "fatsG": 1.0,
+                      "proteinsG": 10.3,
+                      "waterG": 14.0,
+                      "sodiumMg": 2.0
+                    }
+                  ],
+                  "instructions": "1. ...\n2. ..."
                 }
             """.trimIndent())
         }
@@ -269,8 +289,8 @@ class OpenAiRecipeService{
     }
 
     /**
-     * Stima con precisione scientifica i 6 valori nutrizionali per 100g per ciascun ingrediente
-     * e suggerisce il modificatore peso in cottura (% resa o calo).
+     * Stima con precisione scientifica i 6 valori nutrizionali per 100g per ciascun ingrediente fornito.
+     * Non altera né calcola il modificatore calo peso (riservato alla ricetta completa).
      */
     suspend fun enrichNutritionalValues(
         apiKey: String,
@@ -289,16 +309,15 @@ class OpenAiRecipeService{
 
         val prompt = buildString{
             append("Sei un esperto nutrizionista e chimico alimentare per l'app SIMO.\n")
-            append("Per la ricetta \"$recipeName\", analizza i seguenti ingredienti:\n")
+            append("Per la ricetta \"$recipeName\", analizza i seguenti ingredienti ed assegna a ciascuno valori nutrizionali realistici basati su tabelle ufficiali (es. CREA / USDA):\n")
             append(ingredientsListText)
             append("\n\nCOMPITI:\n")
-            append("1. Per ciascun ingrediente determina con accuratezza i 6 valori nutrizionali per 100g di materia prima: caloriesKcal, carbohydratesG, fatsG, proteinsG, waterG (acqua in g), sodiumMg (sodio in mg).\n")
-            append("2. Determina 'cookingWeightModifier' (% di calo/aumento peso in cottura, es. -12.0 per forno/evaporazione, +120.0 per pasta/riso, 0.0 per crudo).\n\n")
+            append("1. Per ciascun ingrediente determina con la massima accuratezza i 6 valori nutrizionali per 100g di materia prima: caloriesKcal, carbohydratesG, fatsG, proteinsG, waterG (acqua in g), sodiumMg (sodio in mg).\n")
+            append("2. Restituisci ESATTAMENTE gli stessi ingredienti forniti, senza aggiungerne né ometterne alcuno.\n\n")
             append("""
                 Rispondi esclusivamente con un JSON valido nel seguente formato:
                 {
                   "name": "$recipeName",
-                  "cookingWeightModifier": -10.0,
                   "ingredients": [
                     {
                       "name": "Nome ingrediente",

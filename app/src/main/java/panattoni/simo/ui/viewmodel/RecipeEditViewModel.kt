@@ -822,6 +822,139 @@ class RecipeEditViewModel(
     }
 
     /**
+     * Applica ESCLUSIVAMENTE i 6 valori nutrizionali restituiti dall'AI agli ingredienti esistenti.
+     * Preserva in modo assoluto pesature (quantity), unità (unit), costi unitari (pricePerUnit/priceUnit) ed allergeni.
+     */
+    private suspend fun applyNutritionalValuesOnly(
+        ingredients: List<GeminiIngredient>
+    ){
+        val allItemsMap = repository.allItems.first().associateBy{ it.name.trim().lowercase() }
+        val currentComponents = _uiState.value.components.toMutableList()
+
+        for (i in currentComponents.indices){
+            val comp = currentComponents[i]
+            val compNameClean = comp.itemName.trim().lowercase()
+
+            // Trova l'ingrediente corrispondente restituito dall'AI
+            val match = ingredients.find{ it.name.trim().lowercase() == compNameClean }
+                ?: ingredients.find{ compNameClean.contains(it.name.trim().lowercase()) || it.name.trim().lowercase().contains(compNameClean) }
+
+            if (match != null){
+                // Aggiorna solo i valori nutrizionali, preservando quantità, unità, costi e allergeni esistenti
+                val updatedComp = comp.copy(
+                    caloriesKcal = match.caloriesKcal ?: comp.caloriesKcal,
+                    carbohydratesG = match.carbohydratesG ?: comp.carbohydratesG,
+                    fatsG = match.fatsG ?: comp.fatsG,
+                    proteinsG = match.proteinsG ?: comp.proteinsG,
+                    waterG = match.waterG ?: comp.waterG,
+                    sodiumMg = match.sodiumMg ?: comp.sodiumMg
+                )
+                currentComponents[i] = updatedComp
+
+                // Aggiorna anche l'entità Item nel database Room
+                val existingItem = allItemsMap[compNameClean] ?: repository.allItems.first().find{ it.id == comp.itemId }
+                if (existingItem != null){
+                    val updatedItem = existingItem.copy(
+                        caloriesKcal = match.caloriesKcal ?: existingItem.caloriesKcal,
+                        carbohydratesG = match.carbohydratesG ?: existingItem.carbohydratesG,
+                        fatsG = match.fatsG ?: existingItem.fatsG,
+                        proteinsG = match.proteinsG ?: existingItem.proteinsG,
+                        waterG = match.waterG ?: existingItem.waterG,
+                        sodiumMg = match.sodiumMg ?: existingItem.sodiumMg
+                    )
+                    repository.saveItem(updatedItem)
+                }
+            }
+        }
+
+        _uiState.value = _uiState.value.copy(
+            components = currentComponents,
+            availableItems = repository.allItems.first()
+        )
+    }
+
+    /**
+     * Completa gli ingredienti esistenti SENZA aggiungerne di nuovi né rimuoverne.
+     * Completa: pesature (solo se mancanti o <= 0), costi (se mancanti), allergeni e tutti i 6 valori nutrizionali.
+     */
+    private suspend fun applyCompletedMissingIngredients(
+        ingredients: List<GeminiIngredient>
+    ){
+        val allItemsMap = repository.allItems.first().associateBy{ it.name.trim().lowercase() }
+        val currentComponents = _uiState.value.components.toMutableList()
+
+        for (i in currentComponents.indices){
+            val comp = currentComponents[i]
+            val compNameClean = comp.itemName.trim().lowercase()
+
+            val match = ingredients.find{ it.name.trim().lowercase() == compNameClean }
+                ?: ingredients.find{ compNameClean.contains(it.name.trim().lowercase()) || it.name.trim().lowercase().contains(compNameClean) }
+
+            if (match != null){
+                val existingQtyParsed = NumberUtils.parseDoubleSafe(comp.quantity, 0.0)
+
+                // Preserva la quantità se già definita dall'utente (> 0)
+                val finalQuantity = if (existingQtyParsed > 0.0){
+                    comp.quantity
+                } else if (panattoni.simo.domain.MeasurementUnit.isQb(match.unit)){
+                    ""
+                } else if (panattoni.simo.domain.MeasurementUnit.isIntegerUnit(match.unit)){
+                    panattoni.simo.domain.MeasurementUnit.roundIntegerAmount(match.quantity).toString()
+                } else{
+                    NumberUtils.formatAmount(match.quantity)
+                }
+
+                val finalUnit = if (comp.unit.isNotBlank() && existingQtyParsed > 0.0){
+                    comp.unit
+                } else{
+                    match.unit.ifBlank{ comp.unit }
+                }
+
+                val finalPrice = comp.pricePerUnit ?: match.pricePerUnit
+                val finalPriceUnit = comp.priceUnit ?: match.priceUnit
+                val finalAllergens = if (comp.allergens.isNotEmpty()) comp.allergens else match.allergens
+
+                val updatedComp = comp.copy(
+                    quantity = finalQuantity,
+                    unit = finalUnit,
+                    pricePerUnit = finalPrice,
+                    priceUnit = finalPriceUnit,
+                    allergens = finalAllergens,
+                    caloriesKcal = match.caloriesKcal ?: comp.caloriesKcal,
+                    carbohydratesG = match.carbohydratesG ?: comp.carbohydratesG,
+                    fatsG = match.fatsG ?: comp.fatsG,
+                    proteinsG = match.proteinsG ?: comp.proteinsG,
+                    waterG = match.waterG ?: comp.waterG,
+                    sodiumMg = match.sodiumMg ?: comp.sodiumMg
+                )
+                currentComponents[i] = updatedComp
+
+                // Aggiorna l'Item nel database Room
+                val existingItem = allItemsMap[compNameClean] ?: repository.allItems.first().find{ it.id == comp.itemId }
+                if (existingItem != null){
+                    val updatedItem = existingItem.copy(
+                        pricePerUnit = finalPrice ?: existingItem.pricePerUnit,
+                        priceUnit = finalPriceUnit ?: existingItem.priceUnit,
+                        allergens = if (finalAllergens.isNotEmpty()) Allergen.formatAllergensString(finalAllergens) else existingItem.allergens,
+                        caloriesKcal = match.caloriesKcal ?: existingItem.caloriesKcal,
+                        carbohydratesG = match.carbohydratesG ?: existingItem.carbohydratesG,
+                        fatsG = match.fatsG ?: existingItem.fatsG,
+                        proteinsG = match.proteinsG ?: existingItem.proteinsG,
+                        waterG = match.waterG ?: existingItem.waterG,
+                        sodiumMg = match.sodiumMg ?: existingItem.sodiumMg
+                    )
+                    repository.saveItem(updatedItem)
+                }
+            }
+        }
+
+        _uiState.value = _uiState.value.copy(
+            components = currentComponents,
+            availableItems = repository.allItems.first()
+        )
+    }
+
+    /**
      * Genera una ricetta completa invocando il provider AI selezionato (Gemini o ChatGPT),
      * con fallback automatico all'altro provider in caso di esaurimento quota o errore transitorio.
      */
@@ -1051,7 +1184,7 @@ class RecipeEditViewModel(
             }
 
             finalResult.onSuccess{ response ->
-                applyGeminiIngredients(response.ingredients, clearExisting = false)
+                applyCompletedMissingIngredients(response.ingredients)
 
                 val newInstructions = if (state.instructions.isBlank() && !response.instructions.isNullOrBlank()){
                     response.instructions
@@ -1060,7 +1193,7 @@ class RecipeEditViewModel(
                 _uiState.value = _uiState.value.copy(
                     instructions = newInstructions,
                     isAiLoading = false,
-                    infoMessage = "✨ Pesi, dosi, costi e allergeni mancanti completati da $providerUsed!"
+                    infoMessage = "✨ Dosi mancanti, costi, allergeni e valori nutrizionali completati da $providerUsed!"
                 )
                 onComplete()
             }.onFailure{ err ->
@@ -1279,18 +1412,12 @@ class RecipeEditViewModel(
             }
 
             finalResult.onSuccess{ response ->
-                applyGeminiIngredients(response.ingredients, clearExisting = false)
-
-                val newMod = if (state.cookingWeightModifier == 0.0 && response.cookingWeightModifier != null){
-                    response.cookingWeightModifier
-                } else state.cookingWeightModifier
-                val newModInput = if (newMod == 0.0) "0" else String.format(java.util.Locale.US, "%.1f", newMod).replace(".0", "")
+                // Applica esclusivamente i valori nutrizionali senza toccare pesi, costi, allergeni o calo peso
+                applyNutritionalValuesOnly(response.ingredients)
 
                 _uiState.value = _uiState.value.copy(
-                    cookingWeightModifier = newMod,
-                    cookingWeightModifierInput = newModInput,
                     isAiLoading = false,
-                    infoMessage = "✨ Valori nutrizionali e resa cottura calcolati con successo da $providerUsed!"
+                    infoMessage = "✨ Valori nutrizionali calcolati con successo da $providerUsed!"
                 )
                 onComplete()
             }.onFailure{ err ->

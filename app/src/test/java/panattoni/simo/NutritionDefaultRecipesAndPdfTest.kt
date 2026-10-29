@@ -285,4 +285,101 @@ class NutritionDefaultRecipesAndPdfTest{
         assertEquals("1.25 kg", NumberUtils.formatWeight(1250.0))
         assertEquals("2.5 kg", NumberUtils.formatWeight(2500.0))
     }
+
+    @Test
+    fun testAiNutritionalEnrichmentResponseParsing(){
+        val service = panattoni.simo.data.remote.GeminiRecipeService()
+        val mockJson = org.json.JSONObject("""
+            {
+              "recipeName": "Cheesecake al Limone",
+              "ingredients": [
+                {
+                  "name": "Biscotti Digestive",
+                  "caloriesKcal": 483.0,
+                  "carbohydratesG": 68.0,
+                  "fatsG": 21.0,
+                  "proteinsG": 7.0,
+                  "waterG": 2.0,
+                  "sodiumMg": 500.0
+                },
+                {
+                  "name": "Burro",
+                  "caloriesKcal": 717.0,
+                  "carbohydratesG": 0.1,
+                  "fatsG": 81.1,
+                  "proteinsG": 0.9,
+                  "waterG": 16.0,
+                  "sodiumMg": 11.0
+                }
+              ]
+            }
+        """.trimIndent())
+
+        val parsed = service.parseRecipeJson(mockJson)
+        assertEquals("Cheesecake al Limone", parsed.recipeName)
+        assertEquals(2, parsed.ingredients.size)
+
+        val biscotti = parsed.ingredients[0]
+        assertEquals("Biscotti Digestive", biscotti.name)
+        assertEquals(483.0, biscotti.caloriesKcal!!, 0.01)
+        assertEquals(68.0, biscotti.carbohydratesG!!, 0.01)
+        assertEquals(21.0, biscotti.fatsG!!, 0.01)
+        assertEquals(7.0, biscotti.proteinsG!!, 0.01)
+        assertEquals(2.0, biscotti.waterG!!, 0.01)
+        assertEquals(500.0, biscotti.sodiumMg!!, 0.01)
+    }
+
+    @Test
+    fun testAiCompleteMissingIngredientsResponseParsing(){
+        val service = panattoni.simo.data.remote.GeminiRecipeService()
+        val mockJson = org.json.JSONObject("""
+            {
+              "recipeName": "Crema Chantilly",
+              "baseYield": 500.0,
+              "yieldUnit": "g",
+              "ingredients": [
+                {
+                  "name": "Panna fresca",
+                  "quantity": 400.0,
+                  "unit": "g",
+                  "pricePerUnit": 4.50,
+                  "priceUnit": "l",
+                  "allergens": ["LATTE"],
+                  "caloriesKcal": 335.0,
+                  "carbohydratesG": 2.7,
+                  "fatsG": 35.0,
+                  "proteinsG": 2.1,
+                  "waterG": 59.0,
+                  "sodiumMg": 34.0
+                },
+                {
+                  "name": "Zucchero a velo",
+                  "quantity": 100.0,
+                  "unit": "g",
+                  "pricePerUnit": 2.00,
+                  "priceUnit": "kg",
+                  "allergens": [],
+                  "caloriesKcal": 389.0,
+                  "carbohydratesG": 99.8,
+                  "fatsG": 0.0,
+                  "proteinsG": 0.0,
+                  "waterG": 0.2,
+                  "sodiumMg": 1.0
+                }
+              ],
+              "instructions": "1. Montare la panna ben fredda con lo zucchero a velo."
+            }
+        """.trimIndent())
+
+        val parsed = service.parseRecipeJson(mockJson)
+        assertEquals(2, parsed.ingredients.size)
+        val panna = parsed.ingredients[0]
+        assertEquals(400.0, panna.quantity, 0.01)
+        assertEquals("g", panna.unit)
+        assertEquals(4.50, panna.pricePerUnit!!, 0.01)
+        assertEquals(listOf(panattoni.simo.domain.Allergen.LATTE), panna.allergens)
+        assertEquals(335.0, panna.caloriesKcal!!, 0.01)
+        assertEquals(35.0, panna.fatsG!!, 0.01)
+        assertNotNull(parsed.instructions)
+    }
 }

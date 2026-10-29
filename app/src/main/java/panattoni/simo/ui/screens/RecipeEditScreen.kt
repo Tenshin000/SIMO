@@ -2186,7 +2186,7 @@ fun GeminiAssistantDialog(
                     }
                 }
 
-                // Opzione 2: Completa Dosi e Dati Mancanti
+                // Opzione 2: Completa Dosi Mancanti
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = Color(0xFFEDE7F6),
@@ -2199,13 +2199,13 @@ fun GeminiAssistantDialog(
                 ){
                     Column(modifier = Modifier.padding(12.dp)){
                         Text(
-                            text = "⚖️ Completa Dosi e Dati Mancanti",
+                            text = "⚖️ Completa Dosi Mancanti",
                             color = Color(0xFF4527A0),
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
                         Text(
-                            text = "Calcola i pesi degli ingredienti senza dose, stima i costi mancanti e compila gli allergeni.",
+                            text = "Completa pesature non definite, costi, allergeni UE e valori nutrizionali per gli ingredienti presenti, senza aggiungerne o rimuoverne.",
                             color = Color(0xFF311B92),
                             fontSize = 11.sp,
                             lineHeight = 15.sp
@@ -2244,7 +2244,7 @@ fun GeminiAssistantDialog(
                     }
                 }
 
-                // Opzione 4: Stima Valori Nutrizionali e Calo Peso Cottura
+                // Opzione 4: Calcola Valori Nutrizionali
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = Color(0xFFE0F2F1),
@@ -2257,14 +2257,14 @@ fun GeminiAssistantDialog(
                 ){
                     Column(modifier = Modifier.padding(12.dp)){
                         Text(
-                            text = "🥗 Calcola Valori Nutrizionali & Calo Peso",
+                            text = "🥗 Calcola Valori Nutrizionali",
                             color = Color(0xFF00695C),
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
                         Text(
                             text = if (hasIngredients){
-                                "Stima i 6 nutrienti ufficiali (calorie, carbo, grassi, proteine, acqua, sodio) e calcola la resa di cottura."
+                                "Stima i 6 nutrienti ufficiali per 100g (calorie, carbo, grassi, proteine, acqua, sodio) per ciascun ingrediente presente."
                             } else {
                                 "Richiede almeno un ingrediente inserito nella ricetta."
                             },
