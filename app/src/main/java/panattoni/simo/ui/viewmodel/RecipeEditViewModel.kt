@@ -1073,7 +1073,8 @@ class RecipeEditViewModel(
                 }
                 val updatedTags = RecipeTags.getAllSortedTags(tagsInput)
                 val newYield = response.baseYield?.let{ NumberUtils.formatAmount(it) } ?: state.baseYield
-                val newYieldUnit = response.yieldUnit ?: state.yieldUnit
+                // Unità di resa: l'AI mantiene l'unità scelta dall'utente se idonea alla ricetta, altrimenti torna a porzioni
+                val newYieldUnit = response.yieldUnit?.trim()?.takeIf{ it.isNotBlank() } ?: state.yieldUnit
                 val newInstructions = response.instructions ?: state.instructions
                 val newModifier = response.cookingWeightModifier ?: state.cookingWeightModifier
                 val newModInput = if (newModifier == 0.0) "0" else String.format(java.util.Locale.US, "%.1f", newModifier).replace(".0", "")

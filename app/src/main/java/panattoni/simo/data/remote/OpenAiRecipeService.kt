@@ -121,6 +121,10 @@ class OpenAiRecipeService{
                - MOLLUSCHI
             4. FORMATO DI RISPOSTA:
                Rispondi ESCLUSIVAMENTE con un oggetto JSON valido, senza testo introduttivo né blocchi markdown.
+            5. UNITÀ DELLA RESA ('yieldUnit') E SENSO GASTRONOMICO:
+               - Valuta con attenzione l'unità di resa richiesta dall'utente (es. "bicchieri", "torta", "crostata", "muffin", "panini", "fette", "bottiglie", "flûte", ecc.).
+               - Se ha senso gastronomico o di servizio per il tipo di preparazione (es. "bicchieri" o "flûte" per bevande e cocktail; "torta" o "crostata" per dolci e torte intere; "panini" o "burger" per panini; "cornetti" per cornetti), DEVI MANTENERE esattamente l'unità scelta dall'utente (es. "bicchieri", "torta") e bilanciare sia le dosi che il 'baseYield' su di essa (es. 1 torta, 2 bicchieri).
+               - Se invece l'unità indicata dall'utente NON HA ALCUN SENSO culinario per la ricetta richiesta (es. "bicchieri" per una pizza o una lasagna, o "torta" per un cocktail o un risotto), oppure se è generica/assente, usa come fallback "porzioni".
         """.trimIndent()
     }
 
@@ -141,10 +145,17 @@ class OpenAiRecipeService{
         }
 
         val prompt = buildString{
+            val userUnit = yieldUnit?.trim()?.takeIf{ it.isNotBlank() } ?: "porzioni"
+            val userYieldNum = baseYield?.trim()?.takeIf{ it.isNotBlank() } ?: "4"
             append("Genera una ricetta professionale e bilanciata per: \"$recipeName\".\n")
-            if (!baseYield.isNullOrBlank() && !yieldUnit.isNullOrBlank()){
-                append("Resa base richiesta: $baseYield $yieldUnit.\n")
-            }
+            append("Resa base e Unità richiesta: $userYieldNum $userUnit.\n")
+            append("""
+                IMPORTANTE SULL'UNITÀ DELLA RESA ('yieldUnit'):
+                L'utente ha impostato come unità di misura: "$userUnit".
+                - Se "$userUnit" ha senso culinario o di somministrazione per la ricetta "$recipeName" (es. "torta" per un dolce/torta, "bicchieri" per un cocktail/bevanda/frullato, "panini" per panini, "crostata" per crostate, "cornetti" per cornetti), DEVI MANTENERE TASSATIVAMENTE "$userUnit" nel campo 'yieldUnit' del JSON e calcolare e bilanciare sia le dosi degli ingredienti che il valore di 'baseYield' per questa unità.
+                - Se invece "$userUnit" NON ha alcun senso culinario per la ricetta "$recipeName" (es. "bicchieri" per pasta o pizza, o "torta" per una bevanda o un risotto), imposta 'yieldUnit' a "porzioni".
+            """.trimIndent())
+            append("\n")
             if (!customPrompt.isNullOrBlank()){
                 append("Istruzioni speciali dell'utente: $customPrompt\n")
             }
@@ -153,8 +164,8 @@ class OpenAiRecipeService{
                 - 'name': nome formale della ricetta
                 - 'description': breve descrizione invitante (1-2 frasi)
                 - 'category': categoria appropriata (es. Primi, Secondi, Dolci, Lievitati, Panini, Pasticceria, Bevande, Antipasti)
-                - 'baseYield': numero resa (es. 4.0 o 10.0)
-                - 'yieldUnit': "porzioni" o "cornetti" o "pizze" o "panini" o "g"
+                - 'baseYield': numero resa (es. $userYieldNum)
+                - 'yieldUnit': "$userUnit" (o "porzioni" se "$userUnit" non ha senso per la ricetta)
                 - 'ingredients': lista di tutti gli ingredienti con 'name', 'quantity' (numero), 'unit' (es. g, ml, pz, unità, cucchiaio, q.b.), 'pricePerUnit' (costo unitario di mercato), 'priceUnit' (kg, l, pz o unità), 'allergens' (array con ID degli allergeni UE)
                 - 'instructions': testo con i passaggi del procedimento numerati (1., 2., 3...)
                 
@@ -163,8 +174,8 @@ class OpenAiRecipeService{
                   "name": "Nome",
                   "description": "Descrizione",
                   "category": "Dolci",
-                  "baseYield": 4.0,
-                  "yieldUnit": "porzioni",
+                  "baseYield": $userYieldNum,
+                  "yieldUnit": "$userUnit",
                   "ingredients": [
                     { "name": "Farina 00", "quantity": 200.0, "unit": "g", "pricePerUnit": 1.20, "priceUnit": "kg", "allergens": ["GLUTINE"] }
                   ],
@@ -462,7 +473,11 @@ class OpenAiRecipeService{
         val description = recipeJson.optString("description").trim().takeIf{ it.isNotBlank() }
         val category = recipeJson.optString("category").trim().takeIf{ it.isNotBlank() }
         val baseYield = recipeJson.optDouble("baseYield").takeIf{ !it.isNaN() && it > 0.0 }
-        val yieldUnit = recipeJson.optString("yieldUnit").trim().takeIf{ it.isNotBlank() }
+        val rawYieldUnit = recipeJson.optString("yieldUnit")
+        val yieldUnit = rawYieldUnit
+            .replace(Regex("""\(.*\)"""), "")
+            .trim()
+            .takeIf{ it.isNotBlank() }
         val instructions = recipeJson.optString("instructions").trim().takeIf{ it.isNotBlank() }
 
         val ingredientsList = mutableListOf<GeminiIngredient>()

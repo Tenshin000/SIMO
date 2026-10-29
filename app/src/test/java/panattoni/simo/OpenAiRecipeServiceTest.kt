@@ -83,4 +83,25 @@ class OpenAiRecipeServiceTest{
         assertTrue(parsed.instructions!!.contains("1. "))
         assertTrue(parsed.instructions!!.contains("4. "))
     }
+
+    @Test
+    fun testParseRecipeJsonWithCustomYieldUnit(){
+        // Verifica che un'unità personalizzata sensata come "bicchieri" o "torta" venga preservata e ripulita correttamente
+        val json = JSONObject("""
+        {
+          "name": "Spritz Veneziano",
+          "category": "Alcolici",
+          "baseYield": 2.0,
+          "yieldUnit": "bicchieri (2 drink)",
+          "ingredients": [
+            { "name": "Prosecco", "quantity": 180.0, "unit": "ml", "pricePerUnit": 6.0, "priceUnit": "l", "allergens": ["SOLFITI"] }
+          ],
+          "instructions": "1. Riempire i bicchieri di ghiaccio.\n2. Versare il prosecco."
+        }
+        """.trimIndent())
+
+        val parsed = service.parseRecipeJson(json)
+        assertEquals("bicchieri", parsed.yieldUnit)
+        assertEquals(2.0, parsed.baseYield!!, 0.001)
+    }
 }

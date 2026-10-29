@@ -1,4 +1,4 @@
-﻿package panattoni.simo
+package panattoni.simo
 
 import panattoni.simo.data.remote.GeminiRecipeService
 import panattoni.simo.domain.Allergen
@@ -84,6 +84,25 @@ class GeminiRecipeServiceTest {
         assertTrue(parsed.instructions!!.contains("3. "))
         assertTrue(parsed.instructions!!.contains("4. "))
         assertTrue(parsed.instructions!!.contains("5. "))
+        assertEquals("torta", parsed.yieldUnit)
+    }
+
+    @Test
+    fun testParseRecipeJsonWithCustomYieldUnit(){
+        // Verifica che l'unità personalizzata sensata come "bicchieri" o "torta" venga preservata
+        val mockJsonResponse = """
+        {
+          "name": "Negroni Classico",
+          "category": "Alcolici",
+          "baseYield": 1.0,
+          "yieldUnit": "bicchieri",
+          "ingredients": [
+            { "name": "Gin", "quantity": 30.0, "unit": "ml", "pricePerUnit": 15.0, "priceUnit": "l", "allergens": [] }
+          ]
+        }
+        """.trimIndent()
+        val parsed = service.parseRecipeJson(JSONObject(mockJsonResponse))
+        assertEquals("bicchieri", parsed.yieldUnit)
     }
 
     @Test

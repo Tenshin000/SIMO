@@ -131,6 +131,10 @@ class GeminiRecipeService{
                  'caloriesKcal' (calorie kcal), 'carbohydratesG' (carboidrati g), 'fatsG' (grassi g), 'proteinsG' (proteine g), 'waterG' (acqua g), 'sodiumMg' (sodio mg).
                - Per la ricetta completa, stima 'cookingWeightModifier' (% di calo peso o resa in cottura):
                  es. -12.0 per evaporazione/calo in forno, +120.0 per pasta o riso che raddoppiano, 0.0 per piatti a freddo.
+            6. UNITÀ DELLA RESA ('yieldUnit') E SENSO GASTRONOMICO:
+               - Valuta con attenzione l'unità di resa richiesta dall'utente (es. "bicchieri", "torta", "crostata", "muffin", "panini", "fette", "bottiglie", "flûte", ecc.).
+               - Se ha senso gastronomico o di servizio per il tipo di preparazione (es. "bicchieri" o "flûte" per bevande e cocktail; "torta" o "crostata" per dolci e torte intere; "panini" o "burger" per panini; "cornetti" per cornetti), DEVI MANTENERE esattamente l'unità scelta dall'utente (es. "bicchieri", "torta") e bilanciare sia le dosi che il 'baseYield' su di essa (es. 1 torta, 2 bicchieri).
+               - Se invece l'unità indicata dall'utente NON HA ALCUN SENSO culinario per la ricetta richiesta (es. "bicchieri" per una pizza o una lasagna, o "torta" per un cocktail o un risotto), oppure se è generica/assente, usa come fallback "porzioni".
             
             DEVI RISPONDERE ESCLUSIVAMENTE CON UN DOCUMENTO JSON VALIDO.
         """.trimIndent()
@@ -155,6 +159,8 @@ class GeminiRecipeService{
         }
 
         val prompt = buildString{
+            val userUnit = yieldUnit?.trim()?.takeIf{ it.isNotBlank() } ?: "porzioni"
+            val userYieldNum = baseYield?.trim()?.takeIf{ it.isNotBlank() } ?: "4"
             append("Genera la ricetta completa e professionale per: \"$recipeName\".\n")
             if (!description.isNullOrBlank()){
                 append("Descrizione / note dell'utente: \"$description\".\n")
@@ -162,9 +168,14 @@ class GeminiRecipeService{
             if (!category.isNullOrBlank()){
                 append("Categoria desiderata: \"$category\".\n")
             }
-            if (!baseYield.isNullOrBlank() && !yieldUnit.isNullOrBlank()){
-                append("Resa base richiesta: $baseYield $yieldUnit.\n")
-            }
+            append("Resa base e Unità richiesta: $userYieldNum $userUnit.\n")
+            append("""
+                IMPORTANTE SULL'UNITÀ DELLA RESA ('yieldUnit'):
+                L'utente ha impostato come unità di misura: "$userUnit".
+                - Se "$userUnit" ha senso culinario o di somministrazione per la ricetta "$recipeName" (es. "torta" per un dolce/torta, "bicchieri" per una bevanda/cocktail/frullato, "panini" per panini, "crostata" per crostate, "cornetti" per cornetti), DEVI MANTENERE TASSATIVAMENTE "$userUnit" nel campo 'yieldUnit' del JSON e calcolare e bilanciare sia le dosi degli ingredienti che il valore di 'baseYield' per questa unità.
+                - Se invece "$userUnit" NON ha alcun senso culinario per la ricetta "$recipeName" (es. "bicchieri" per pasta o pizza, o "torta" per una bevanda o un risotto), imposta 'yieldUnit' a "porzioni".
+            """.trimIndent())
+            append("\n")
             if (!userCustomPrompt.isNullOrBlank()){
                 append("Istruzioni speciali dell'utente: \"$userCustomPrompt\".\n")
             }
@@ -174,8 +185,8 @@ class GeminiRecipeService{
                   "recipeName": "$recipeName",
                   "description": "Breve descrizione professionale accattivante",
                   "category": "Una tra Dolci, Pizze, Panetteria, Panini, Antipasti, Primi, Secondi, Contorni, Zuppe, Alcolici, Analcolici, Caffetteria, Altro",
-                  "baseYield": 4.0,
-                  "yieldUnit": "porzioni" o "cornetti" o "pizze" o "g",
+                  "baseYield": $userYieldNum,
+                  "yieldUnit": "$userUnit",
                   "cookingWeightModifier": -10.0,
                   "ingredients": [
                    {
@@ -497,7 +508,10 @@ class GeminiRecipeService{
         val description = recipeJson.optString("description").trim().takeIf{ it.isNotBlank() }
         val category = recipeJson.optString("category").trim().takeIf{ it.isNotBlank() }
         val baseYield = if (recipeJson.has("baseYield")) recipeJson.optDouble("baseYield", 1.0) else null
-        val yieldUnit = recipeJson.optString("yieldUnit").trim().takeIf{ it.isNotBlank() }
+        val yieldUnit = recipeJson.optString("yieldUnit")
+            .replace(Regex("""\(.*\)"""), "")
+            .trim()
+            .takeIf{ it.isNotBlank() }
 
         val instructions = if (recipeJson.has("instructions")){
             val instObj = recipeJson.opt("instructions")
