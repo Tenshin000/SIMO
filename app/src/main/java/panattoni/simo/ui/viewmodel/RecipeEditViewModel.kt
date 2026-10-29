@@ -36,7 +36,14 @@ data class EditableComponent(
     val unit: String,
     val pricePerUnit: Double? = null,
     val priceUnit: String? = null,
-    val allergens: List<Allergen> = emptyList()
+    val allergens: List<Allergen> = emptyList(),
+    // Valori nutrizionali per 100g di ingrediente
+    val caloriesKcal: Double? = null,
+    val carbohydratesG: Double? = null,
+    val fatsG: Double? = null,
+    val proteinsG: Double? = null,
+    val waterG: Double? = null,
+    val sodiumMg: Double? = null
 )
 
 /**
@@ -59,7 +66,10 @@ data class RecipeEditUiState(
     val infoMessage: String? = null,
     val isSaved: Boolean = false,
     val isAiLoading: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    // Modificatore resa/peso in cottura (%: es. -12.0 per evaporazione o +120.0 per resa pasta/riso)
+    val cookingWeightModifier: Double = 0.0,
+    val cookingWeightModifierInput: String = "0"
 )
 
 /**
@@ -106,9 +116,17 @@ class RecipeEditViewModel(
                                 unit = detail.component.unit,
                                 pricePerUnit = detail.item.pricePerUnit,
                                 priceUnit = detail.item.priceUnit,
-                                allergens = detail.item.allergensList
+                                allergens = detail.item.allergensList,
+                                caloriesKcal = detail.item.caloriesKcal,
+                                carbohydratesG = detail.item.carbohydratesG,
+                                fatsG = detail.item.fatsG,
+                                proteinsG = detail.item.proteinsG,
+                                waterG = detail.item.waterG,
+                                sodiumMg = detail.item.sodiumMg
                             )
                         }
+                        val modVal = current.recipe.cookingWeightModifier
+                        val modInput = if (modVal == 0.0) "0" else String.format(java.util.Locale.US, "%.1f", modVal).replace(".0", "")
                         _uiState.value = _uiState.value.copy(
                             name = current.recipe.name,
                             description = current.recipe.description,
@@ -118,7 +136,9 @@ class RecipeEditViewModel(
                             yieldUnit = current.recipe.yieldUnit,
                             instructions = current.recipe.instructions,
                             components = compList,
-                            createdAt = current.recipe.createdAt
+                            createdAt = current.recipe.createdAt,
+                            cookingWeightModifier = modVal,
+                            cookingWeightModifierInput = modInput
                         )
                     }
                 }
@@ -175,6 +195,15 @@ class RecipeEditViewModel(
     fun onBaseYieldChange(value: String){ _uiState.value = _uiState.value.copy(baseYield = value) }
     fun onYieldUnitChange(value: String){ _uiState.value = _uiState.value.copy(yieldUnit = value) }
     fun onInstructionsChange(value: String){ _uiState.value = _uiState.value.copy(instructions = value) }
+
+    // Aggiorna il modificatore di peso in cottura (% es. -12.0 per evaporazione o +120.0 per pasta)
+    fun onCookingWeightModifierChange(input: String){
+        val parsed = NumberUtils.parseDoubleSafe(input, 0.0)
+        _uiState.value = _uiState.value.copy(
+            cookingWeightModifier = parsed,
+            cookingWeightModifierInput = input
+        )
+    }
 
     fun addComponent(
         item: Item,
@@ -426,7 +455,8 @@ class RecipeEditViewModel(
                     yieldUnit = state.yieldUnit.trim().ifEmpty { "porzioni" },
                     instructions = state.instructions.trim(),
                     isDefault = false,
-                    createdAt = state.createdAt
+                    createdAt = state.createdAt,
+                    cookingWeightModifier = state.cookingWeightModifier
                 )
                 val comps = state.components.mapIndexed { index, comp ->
                     val rawQty = if (panattoni.simo.domain.MeasurementUnit.isQb(comp.unit)){
@@ -469,7 +499,13 @@ class RecipeEditViewModel(
         newUnit: String,
         newPrice: Double?,
         newPriceUnit: String?,
-        newAllergens: List<Allergen>
+        newAllergens: List<Allergen>,
+        newCalories: Double? = null,
+        newCarbs: Double? = null,
+        newFats: Double? = null,
+        newProteins: Double? = null,
+        newWater: Double? = null,
+        newSodium: Double? = null
     ){
         val trimmedName = newName.trim()
         val effectiveUnit = newUnit.trim().ifEmpty{ "g" }
@@ -496,7 +532,13 @@ class RecipeEditViewModel(
                     unit = effectiveUnit,
                     pricePerUnit = newPrice,
                     priceUnit = newPriceUnit,
-                    allergens = newAllergens
+                    allergens = newAllergens,
+                    caloriesKcal = newCalories,
+                    carbohydratesG = newCarbs,
+                    fatsG = newFats,
+                    proteinsG = newProteins,
+                    waterG = newWater,
+                    sodiumMg = newSodium
                 )
             } else comp
         }
@@ -513,7 +555,13 @@ class RecipeEditViewModel(
                             defaultUnit = effectiveUnit,
                             pricePerUnit = newPrice,
                             priceUnit = newPriceUnit,
-                            allergens = allergensStr
+                            allergens = allergensStr,
+                            caloriesKcal = newCalories,
+                            carbohydratesG = newCarbs,
+                            fatsG = newFats,
+                            proteinsG = newProteins,
+                            waterG = newWater,
+                            sodiumMg = newSodium
                         )
                     } else{
                         Item(
@@ -523,7 +571,13 @@ class RecipeEditViewModel(
                             defaultUnit = effectiveUnit,
                             pricePerUnit = newPrice,
                             priceUnit = newPriceUnit,
-                            allergens = allergensStr
+                            allergens = allergensStr,
+                            caloriesKcal = newCalories,
+                            carbohydratesG = newCarbs,
+                            fatsG = newFats,
+                            proteinsG = newProteins,
+                            waterG = newWater,
+                            sodiumMg = newSodium
                         )
                     }
                     repository.saveItem(updatedItem)
@@ -686,7 +740,13 @@ class RecipeEditViewModel(
                 val updatedItem = existingItem.copy(
                     pricePerUnit = gemIng.pricePerUnit ?: existingItem.pricePerUnit,
                     priceUnit = gemIng.priceUnit ?: existingItem.priceUnit,
-                    allergens = if (gemIng.allergens.isNotEmpty()) Allergen.formatAllergensString(gemIng.allergens) else existingItem.allergens
+                    allergens = if (gemIng.allergens.isNotEmpty()) Allergen.formatAllergensString(gemIng.allergens) else existingItem.allergens,
+                    caloriesKcal = gemIng.caloriesKcal ?: existingItem.caloriesKcal,
+                    carbohydratesG = gemIng.carbohydratesG ?: existingItem.carbohydratesG,
+                    fatsG = gemIng.fatsG ?: existingItem.fatsG,
+                    proteinsG = gemIng.proteinsG ?: existingItem.proteinsG,
+                    waterG = gemIng.waterG ?: existingItem.waterG,
+                    sodiumMg = gemIng.sodiumMg ?: existingItem.sodiumMg
                 )
                 repository.saveItem(updatedItem)
                 updatedItem
@@ -698,7 +758,13 @@ class RecipeEditViewModel(
                     defaultUnit = gemIng.unit,
                     pricePerUnit = gemIng.pricePerUnit,
                     priceUnit = gemIng.priceUnit,
-                    allergens = Allergen.formatAllergensString(gemIng.allergens)
+                    allergens = Allergen.formatAllergensString(gemIng.allergens),
+                    caloriesKcal = gemIng.caloriesKcal,
+                    carbohydratesG = gemIng.carbohydratesG,
+                    fatsG = gemIng.fatsG,
+                    proteinsG = gemIng.proteinsG,
+                    waterG = gemIng.waterG,
+                    sodiumMg = gemIng.sodiumMg
                 )
                 repository.saveItem(newItem)
                 newItem
@@ -719,7 +785,13 @@ class RecipeEditViewModel(
                     unit = gemIng.unit.ifBlank { newComponents[existingIndex].unit },
                     pricePerUnit = gemIng.pricePerUnit ?: newComponents[existingIndex].pricePerUnit,
                     priceUnit = gemIng.priceUnit ?: newComponents[existingIndex].priceUnit,
-                    allergens = if (gemIng.allergens.isNotEmpty()) gemIng.allergens else newComponents[existingIndex].allergens
+                    allergens = if (gemIng.allergens.isNotEmpty()) gemIng.allergens else newComponents[existingIndex].allergens,
+                    caloriesKcal = gemIng.caloriesKcal ?: newComponents[existingIndex].caloriesKcal,
+                    carbohydratesG = gemIng.carbohydratesG ?: newComponents[existingIndex].carbohydratesG,
+                    fatsG = gemIng.fatsG ?: newComponents[existingIndex].fatsG,
+                    proteinsG = gemIng.proteinsG ?: newComponents[existingIndex].proteinsG,
+                    waterG = gemIng.waterG ?: newComponents[existingIndex].waterG,
+                    sodiumMg = gemIng.sodiumMg ?: newComponents[existingIndex].sodiumMg
                 )
             } else {
                 newComponents.add(
@@ -731,7 +803,13 @@ class RecipeEditViewModel(
                         unit = gemIng.unit,
                         pricePerUnit = targetItem.pricePerUnit,
                         priceUnit = targetItem.priceUnit,
-                        allergens = targetItem.allergensList
+                        allergens = targetItem.allergensList,
+                        caloriesKcal = targetItem.caloriesKcal,
+                        carbohydratesG = targetItem.carbohydratesG,
+                        fatsG = targetItem.fatsG,
+                        proteinsG = targetItem.proteinsG,
+                        waterG = targetItem.waterG,
+                        sodiumMg = targetItem.sodiumMg
                     )
                 )
             }
@@ -844,6 +922,8 @@ class RecipeEditViewModel(
                 val newYield = response.baseYield?.let{ NumberUtils.formatAmount(it) } ?: state.baseYield
                 val newYieldUnit = response.yieldUnit ?: state.yieldUnit
                 val newInstructions = response.instructions ?: state.instructions
+                val newModifier = response.cookingWeightModifier ?: state.cookingWeightModifier
+                val newModInput = if (newModifier == 0.0) "0" else String.format(java.util.Locale.US, "%.1f", newModifier).replace(".0", "")
 
                 _uiState.value = _uiState.value.copy(
                     description = newDesc,
@@ -852,8 +932,10 @@ class RecipeEditViewModel(
                     baseYield = newYield,
                     yieldUnit = newYieldUnit,
                     instructions = newInstructions,
+                    cookingWeightModifier = newModifier,
+                    cookingWeightModifierInput = newModInput,
                     isAiLoading = false,
-                    infoMessage = "✨ Ricetta, dosi, costi, allergeni e passaggi generati con successo da $providerUsed!"
+                    infoMessage = "✨ Ricetta, dosi, costi, allergeni, valori nutrizionali e passaggi generati con successo da $providerUsed!"
                 )
                 onComplete()
             }.onFailure{ err ->
@@ -898,7 +980,13 @@ class RecipeEditViewModel(
                     unit = comp.unit,
                     pricePerUnit = comp.pricePerUnit,
                     priceUnit = comp.priceUnit,
-                    allergens = comp.allergens
+                    allergens = comp.allergens,
+                    caloriesKcal = comp.caloriesKcal,
+                    carbohydratesG = comp.carbohydratesG,
+                    fatsG = comp.fatsG,
+                    proteinsG = comp.proteinsG,
+                    waterG = comp.waterG,
+                    sodiumMg = comp.sodiumMg
                 )
             }
 
@@ -1021,7 +1109,13 @@ class RecipeEditViewModel(
                     unit = comp.unit,
                     pricePerUnit = comp.pricePerUnit,
                     priceUnit = comp.priceUnit,
-                    allergens = comp.allergens
+                    allergens = comp.allergens,
+                    caloriesKcal = comp.caloriesKcal,
+                    carbohydratesG = comp.carbohydratesG,
+                    fatsG = comp.fatsG,
+                    proteinsG = comp.proteinsG,
+                    waterG = comp.waterG,
+                    sodiumMg = comp.sodiumMg
                 )
             }
 
@@ -1084,6 +1178,119 @@ class RecipeEditViewModel(
                     instructions = instructions,
                     isAiLoading = false,
                     infoMessage = "✨ Passaggi della ricetta generati con successo da $providerUsed!"
+                )
+                onComplete()
+            }.onFailure{ err ->
+                _uiState.value = _uiState.value.copy(
+                    isAiLoading = false,
+                    errorMessage = "Errore AI ($providerUsed): ${err.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Stima o arricchisce i 6 valori nutrizionali degli ingredienti e il modificatore peso in cottura con l'AI.
+     */
+    fun enrichNutritionalValuesWithAi(onComplete: () -> Unit = {}){
+        val state = _uiState.value
+        if (state.components.isEmpty()){
+            _uiState.value = state.copy(errorMessage = "Aggiungi prima degli ingredienti alla ricetta per poterne arricchire i valori nutrizionali.")
+            return
+        }
+
+        val preferredProvider = getPreferredAiProvider()
+        val geminiKey = getGeminiApiKey()
+        val openAiKey = getOpenAiApiKey()
+
+        val primaryKey = if (preferredProvider == AiProvider.OPENAI) openAiKey else geminiKey
+        val secondaryKey = if (preferredProvider == AiProvider.OPENAI) geminiKey else openAiKey
+
+        if (primaryKey.isBlank() && secondaryKey.isBlank()){
+            _uiState.value = state.copy(errorMessage = "API_KEY_REQUIRED")
+            return
+        }
+
+        _uiState.value = state.copy(isAiLoading = true, errorMessage = null, infoMessage = null)
+
+        viewModelScope.launch{
+            val existingGeminiIngs = state.components.map{ comp ->
+                val parsedQty = NumberUtils.parseDoubleSafe(comp.quantity, 0.0)
+                GeminiIngredient(
+                    name = comp.itemName,
+                    quantity = parsedQty,
+                    unit = comp.unit,
+                    pricePerUnit = comp.pricePerUnit,
+                    priceUnit = comp.priceUnit,
+                    allergens = comp.allergens,
+                    caloriesKcal = comp.caloriesKcal,
+                    carbohydratesG = comp.carbohydratesG,
+                    fatsG = comp.fatsG,
+                    proteinsG = comp.proteinsG,
+                    waterG = comp.waterG,
+                    sodiumMg = comp.sodiumMg
+                )
+            }
+
+            val useOpenAiPrimary = (preferredProvider == AiProvider.OPENAI && openAiKey.isNotBlank()) || geminiKey.isBlank()
+
+            val primaryResult = if (useOpenAiPrimary){
+                openAiService.enrichNutritionalValues(
+                    apiKey = openAiKey,
+                    recipeName = state.name.ifBlank{ "Ricetta" },
+                    ingredients = existingGeminiIngs,
+                    preferredModel = getOpenAiPreferredModel()
+                )
+            } else{
+                geminiService.enrichNutritionalValues(
+                    apiKey = geminiKey,
+                    recipeName = state.name.ifBlank{ "Ricetta" },
+                    ingredients = existingGeminiIngs,
+                    preferredModel = getGeminiPreferredModel()
+                )
+            }
+
+            var finalResult = primaryResult
+            var providerUsed = if (useOpenAiPrimary) "ChatGPT (${getOpenAiPreferredModel()})" else "Gemini (${getGeminiPreferredModel()})"
+
+            if (primaryResult.isFailure){
+                val canFallback = if (useOpenAiPrimary) geminiKey.isNotBlank() else openAiKey.isNotBlank()
+                if (canFallback){
+                    val fallbackResult = if (useOpenAiPrimary){
+                        geminiService.enrichNutritionalValues(
+                            apiKey = geminiKey,
+                            recipeName = state.name.ifBlank{ "Ricetta" },
+                            ingredients = existingGeminiIngs,
+                            preferredModel = getGeminiPreferredModel()
+                        )
+                    } else{
+                        openAiService.enrichNutritionalValues(
+                            apiKey = openAiKey,
+                            recipeName = state.name.ifBlank{ "Ricetta" },
+                            ingredients = existingGeminiIngs,
+                            preferredModel = getOpenAiPreferredModel()
+                        )
+                    }
+                    if (fallbackResult.isSuccess){
+                        finalResult = fallbackResult
+                        providerUsed = if (useOpenAiPrimary) "Gemini (fallback automatico)" else "ChatGPT (fallback automatico)"
+                    }
+                }
+            }
+
+            finalResult.onSuccess{ response ->
+                applyGeminiIngredients(response.ingredients, clearExisting = false)
+
+                val newMod = if (state.cookingWeightModifier == 0.0 && response.cookingWeightModifier != null){
+                    response.cookingWeightModifier
+                } else state.cookingWeightModifier
+                val newModInput = if (newMod == 0.0) "0" else String.format(java.util.Locale.US, "%.1f", newMod).replace(".0", "")
+
+                _uiState.value = _uiState.value.copy(
+                    cookingWeightModifier = newMod,
+                    cookingWeightModifierInput = newModInput,
+                    isAiLoading = false,
+                    infoMessage = "✨ Valori nutrizionali e resa cottura calcolati con successo da $providerUsed!"
                 )
                 onComplete()
             }.onFailure{ err ->

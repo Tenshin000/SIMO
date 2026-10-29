@@ -98,6 +98,13 @@ data class NutritionalValues(
     val saltG: Double
         get() = (sodiumMg / 1000.0) * 2.5
 
+    val saltEquivalentG: Double
+        get() = saltG
+
+    /** Energia in kilojoule (1 kcal = 4.184 kJ) conforme al Regolamento UE 1169/2011 */
+    val energyKj: Double
+        get() = caloriesKcal * 4.184
+
     /** True se almeno un valore è positivo */
     val hasValues: Boolean
         get() = caloriesKcal > 0.0 || carbohydratesG > 0.0 || fatsG > 0.0 || proteinsG > 0.0 || waterG > 0.0 || sodiumMg > 0.0
@@ -141,7 +148,14 @@ data class RecipeNutritionSummary(
     val portionUnit: String = "porzioni",
     val targetYieldQuantity: Double = 1.0,
     val hasNutritionData: Boolean = false
-)
+){
+    val portionWeightG: Double
+        get() = weightPerPortionGrams
+    val totalRawWeightG: Double
+        get() = totalRawWeightGrams
+    val totalCookedWeightG: Double
+        get() = totalCookedWeightGrams
+}
 
 /**
  * Singolo ingrediente scalato con quantità ricalcolata, costo parziale, peso in grammi ed eventuale sotto-albero ricorsivo.

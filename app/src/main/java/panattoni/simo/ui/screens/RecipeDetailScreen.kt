@@ -59,6 +59,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import panattoni.simo.data.model.ScaledComponent
 import panattoni.simo.domain.Allergen
+import panattoni.simo.data.model.RecipeNutritionSummary
+import panattoni.simo.data.model.NutritionalValues
 import panattoni.simo.service.CookingSessionManager
 import panattoni.simo.util.RecipePdfExporter
 import panattoni.simo.ui.components.ReverseScaleDialog
@@ -365,6 +367,86 @@ fun RecipeDetailScreen(
                                     .size(42.dp)
                             ){
                                 Icon(Icons.Default.Add, contentDescription = "Aumenta", tint = MacaronPrimary)
+                            }
+                        }
+
+                        // Resa e Modificatore Peso in Cottura
+                        val nutrition = tree.nutrition
+                        val cookingMod = recipe.cookingWeightModifier
+                        if (cookingMod != 0.0 || (nutrition != null && nutrition.totalRawWeightG > 0.0)){
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (cookingMod < 0.0) Color(0xFFFFF3E0) else if (cookingMod > 0.0) Color(0xFFE1F5FE) else MacaronSurfaceVariant,
+                                border = BorderStroke(1.dp, if (cookingMod < 0.0) Color(0xFFFFB74D) else if (cookingMod > 0.0) Color(0xFF81D4FA) else MacaronCardBorder),
+                                modifier = Modifier.fillMaxWidth()
+                            ){
+                                Column(modifier = Modifier.padding(10.dp)){
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ){
+                                        Text(
+                                            text = if (cookingMod < 0.0) "🔥 Calo Peso in Cottura" else if (cookingMod > 0.0) "💧 Aumento Peso in Cottura" else "⚖️ Resa Peso Finito",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            color = if (cookingMod < 0.0) Color(0xFFE65100) else if (cookingMod > 0.0) Color(0xFF0277BD) else MacaronText
+                                        )
+                                        if (cookingMod != 0.0){
+                                            Surface(
+                                                shape = RoundedCornerShape(6.dp),
+                                                color = if (cookingMod < 0.0) Color(0xFFFFE0B2) else Color(0xFFB3E5FC)
+                                            ){
+                                                Text(
+                                                    text = if (cookingMod > 0) "+${String.format(java.util.Locale.US, "%.1f", cookingMod)}%" else "${String.format(java.util.Locale.US, "%.1f", cookingMod)}%",
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    fontSize = 12.sp,
+                                                    color = if (cookingMod < 0.0) Color(0xFFBF360C) else Color(0xFF01579B),
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    if (nutrition != null && nutrition.totalRawWeightG > 0.0){
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        val rawWeightStr = NumberUtils.formatWeight(nutrition.totalRawWeightG)
+                                        val cookedWeightStr = NumberUtils.formatWeight(nutrition.totalCookedWeightG)
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ){
+                                            Text(
+                                                text = "Impasto crudo: $rawWeightStr",
+                                                fontSize = 11.sp,
+                                                color = MacaronSubtleText
+                                            )
+                                            Text(
+                                                text = "➔",
+                                                fontSize = 11.sp,
+                                                color = MacaronSubtleText
+                                            )
+                                            Text(
+                                                text = "Cotto finito: $cookedWeightStr",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MacaronText
+                                            )
+                                        }
+                                        if (nutrition.portionWeightG > 0.0 && tree.targetYieldQuantity > 0.0){
+                                            val portionWeightStr = NumberUtils.formatWeight(nutrition.portionWeightG)
+                                            val singUnit = ItalianGrammarUtils.toSingular(recipe.yieldUnit)
+                                            Text(
+                                                text = "Resa cotta finita: ~$portionWeightStr a $singUnit",
+                                                fontSize = 10.5.sp,
+                                                color = MacaronSubtleText,
+                                                modifier = Modifier.padding(top = 2.dp)
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
 
@@ -679,6 +761,15 @@ fun RecipeDetailScreen(
                     allergens = tree.allergens,
                     components = tree.components
                 )
+            }
+
+            // Card Dichiarazione Nutrizionale Grafica UE (Regolamento UE n. 1169/2011)
+            item{
+                Spacer(modifier = Modifier.height(10.dp))
+                RecipeNutritionCard(
+                    nutrition = tree.nutrition,
+                    yieldUnit = recipe.yieldUnit
+                )
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
@@ -906,3 +997,262 @@ fun RecipeAllergensCard(
         }
     }
 }
+
+/**
+ * Riquadro grafico "Dichiarazione Nutrizionale" conforme al Regolamento UE n. 1169/2011.
+ * Mostra valori nutrizionali per 100g e a porzione, calo peso/resa di cottura ed equivalenza sale/sodio.
+ */
+@Composable
+fun RecipeNutritionCard(
+    nutrition: RecipeNutritionSummary?,
+    yieldUnit: String,
+    modifier: Modifier = Modifier
+){
+    val hasNutrition = nutrition != null && nutrition.hasNutritionData
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MacaronCard),
+        border = BorderStroke(
+            1.5.dp,
+            if (hasNutrition) Color(0xFF2E7D32).copy(alpha = 0.5f) else MacaronCardBorder
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+    ){
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ){
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ){
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFFE8F5E9),
+                        modifier = Modifier.size(34.dp)
+                    ){
+                        Box(contentAlignment = Alignment.Center){
+                            Text("🥗", fontSize = 18.sp)
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column{
+                        Text(
+                            text = "Dichiarazione Nutrizionale",
+                            color = MacaronText,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                        Text(
+                            text = "Regolamento (UE) n. 1169/2011",
+                            color = MacaronSubtleText,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+
+                if (hasNutrition){
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFE8F5E9)
+                    ){
+                        Text(
+                            text = "${nutrition.perPortion.caloriesKcal.toInt()} kcal",
+                            color = Color(0xFF2E7D32),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            if (!hasNutrition){
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MacaronSurfaceVariant.copy(alpha = 0.5f),
+                    border = BorderStroke(1.dp, MacaronCardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ){
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Text("ℹ️", fontSize = 16.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Valori nutrizionali non ancora impostati. Tocca 'Modifica' in alto per calcolarli o arricchirli automaticamente con l'Assistente AI.",
+                            color = MacaronSubtleText,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+            } else {
+                val singUnit = ItalianGrammarUtils.toSingular(yieldUnit)
+                val portionLabel = if (nutrition.portionWeightG > 0.0){
+                    "Porz. (${NumberUtils.formatWeight(nutrition.portionWeightG)})"
+                } else{
+                    "1 $singUnit"
+                }
+
+                // Tabella Nutrizionale Stile Etichetta UE
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MacaronSurfaceVariant.copy(alpha = 0.35f),
+                    border = BorderStroke(1.2.dp, Color(0xFF81C784)),
+                    modifier = Modifier.fillMaxWidth()
+                ){
+                    Column(modifier = Modifier.fillMaxWidth()){
+                        // Intestazione Tabella
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF2E7D32))
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ){
+                            Text(
+                                text = "VALORI MEDI",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                modifier = Modifier.weight(1.5f)
+                            )
+                            Text(
+                                text = "Per 100 g",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                modifier = Modifier.weight(1.1f),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.End
+                            )
+                            Text(
+                                text = portionLabel,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                modifier = Modifier.weight(1.2f),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.End
+                            )
+                        }
+
+                        // Righe Nutrienti
+                        val rows = listOf(
+                            NutrientRowData(
+                                name = "Energia",
+                                isBold = true,
+                                per100g = "${nutrition.per100g.energyKj.toInt()} kJ / ${nutrition.per100g.caloriesKcal.toInt()} kcal",
+                                perPortion = "${nutrition.perPortion.energyKj.toInt()} kJ / ${nutrition.perPortion.caloriesKcal.toInt()} kcal"
+                            ),
+                            NutrientRowData(
+                                name = "Grassi",
+                                isBold = true,
+                                per100g = "${String.format(java.util.Locale.US, "%.1f", nutrition.per100g.fatsG)} g",
+                                perPortion = "${String.format(java.util.Locale.US, "%.1f", nutrition.perPortion.fatsG)} g"
+                            ),
+                            NutrientRowData(
+                                name = "Carboidrati",
+                                isBold = true,
+                                per100g = "${String.format(java.util.Locale.US, "%.1f", nutrition.per100g.carbohydratesG)} g",
+                                perPortion = "${String.format(java.util.Locale.US, "%.1f", nutrition.perPortion.carbohydratesG)} g"
+                            ),
+                            NutrientRowData(
+                                name = "Proteine",
+                                isBold = true,
+                                per100g = "${String.format(java.util.Locale.US, "%.1f", nutrition.per100g.proteinsG)} g",
+                                perPortion = "${String.format(java.util.Locale.US, "%.1f", nutrition.perPortion.proteinsG)} g"
+                            ),
+                            NutrientRowData(
+                                name = "Sale (equivalente)",
+                                isBold = false,
+                                per100g = "${String.format(java.util.Locale.US, "%.2f", nutrition.per100g.saltEquivalentG)} g",
+                                perPortion = "${String.format(java.util.Locale.US, "%.2f", nutrition.perPortion.saltEquivalentG)} g"
+                            ),
+                            NutrientRowData(
+                                name = "Sodio",
+                                isBold = false,
+                                per100g = "${nutrition.per100g.sodiumMg.toInt()} mg",
+                                perPortion = "${nutrition.perPortion.sodiumMg.toInt()} mg"
+                            ),
+                            NutrientRowData(
+                                name = "Acqua (umidità)",
+                                isBold = false,
+                                per100g = "${String.format(java.util.Locale.US, "%.1f", nutrition.per100g.waterG)} g",
+                                perPortion = "${String.format(java.util.Locale.US, "%.1f", nutrition.perPortion.waterG)} g"
+                            )
+                        )
+
+                        rows.forEachIndexed { index, row ->
+                            val bg = if (index % 2 == 0) Color.Transparent else Color(0xFFF1F8E9).copy(alpha = 0.5f)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(bg)
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ){
+                                Text(
+                                    text = row.name,
+                                    fontWeight = if (row.isBold) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 11.5.sp,
+                                    color = MacaronText,
+                                    modifier = Modifier.weight(1.5f)
+                                )
+                                Text(
+                                    text = row.per100g,
+                                    fontWeight = if (row.isBold) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 11.sp,
+                                    color = MacaronText,
+                                    modifier = Modifier.weight(1.1f),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                                )
+                                Text(
+                                    text = row.perPortion,
+                                    fontWeight = if (row.isBold) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 11.sp,
+                                    color = MacaronText,
+                                    modifier = Modifier.weight(1.2f),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Dettagli cottura e resa
+                if (nutrition.cookingWeightModifier != 0.0){
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "• Valori nutrizionali calcolati sulla massa cotta finita (Modificatore cottura: ${String.format(java.util.Locale.US, "%.1f", nutrition.cookingWeightModifier)}%).",
+                        fontSize = 10.5.sp,
+                        color = MacaronSubtleText,
+                        lineHeight = 14.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+private data class NutrientRowData(
+    val name: String,
+    val isBold: Boolean,
+    val per100g: String,
+    val perPortion: String
+)

@@ -371,6 +371,27 @@ fun RecipeEditScreen(
                                 shape = RoundedCornerShape(12.dp)
                             )
                         }
+
+                        // Modificatore resa/peso in cottura (%)
+                        OutlinedTextField(
+                            value = uiState.cookingWeightModifierInput,
+                            onValueChange = viewModel::onCookingWeightModifierChange,
+                            label ={ Text("Modificatore resa in cottura (%)") },
+                            placeholder ={ Text("es. -12 per calo forno, +120 per resa pasta") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                            singleLine = true,
+                            supportingText ={
+                                val mod = uiState.cookingWeightModifier
+                                val desc = when{
+                                    mod < 0 -> "Calo peso / evaporazione in cottura: ${String.format(java.util.Locale.US, "%.1f", mod)}%"
+                                    mod > 0 -> "Aumento peso / resa in cottura: +${String.format(java.util.Locale.US, "%.1f", mod)}%"
+                                    else -> "Nessuna variazione di peso in cottura (0%)"
+                                }
+                                Text(desc, fontSize = 11.sp, color = MacaronSubtleText)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
                     }
                 }
             }
@@ -849,7 +870,7 @@ fun RecipeEditScreen(
         EditIngredientDetailsDialog(
             component = comp,
             onDismiss ={ editingComponent = null },
-            onConfirm ={ newName, newQty, newUnit, newPrice, newPriceUnit, newAllergens ->
+            onConfirm ={ newName, newQty, newUnit, newPrice, newPriceUnit, newAllergens, newCalories, newCarbs, newFats, newProteins, newWater, newSodium ->
                 viewModel.updateComponentDetails(
                     tempId = comp.tempId,
                     newName = newName,
@@ -857,7 +878,13 @@ fun RecipeEditScreen(
                     newUnit = newUnit,
                     newPrice = newPrice,
                     newPriceUnit = newPriceUnit,
-                    newAllergens = newAllergens
+                    newAllergens = newAllergens,
+                    newCalories = newCalories,
+                    newCarbs = newCarbs,
+                    newFats = newFats,
+                    newProteins = newProteins,
+                    newWater = newWater,
+                    newSodium = newSodium
                 )
                 editingComponent = null
             }
@@ -882,6 +909,9 @@ fun RecipeEditScreen(
             },
             onGenerateInstructions ={ customPrompt ->
                 viewModel.generateInstructionsWithAi(customPrompt, onComplete ={ showAiDialog = false })
+            },
+            onEnrichNutrition ={
+                viewModel.enrichNutritionalValuesWithAi(onComplete ={ showAiDialog = false })
             },
             onOpenApiKeyConfig ={
                 showAiDialog = false
@@ -1489,7 +1519,7 @@ fun AllergenSelector(
 fun EditIngredientDetailsDialog(
     component: EditableComponent,
     onDismiss: () -> Unit,
-    onConfirm: (newName: String, newQuantity: String, newUnit: String, newPrice: Double?, newPriceUnit: String?, newAllergens: List<Allergen>) -> Unit
+    onConfirm: (newName: String, newQuantity: String, newUnit: String, newPrice: Double?, newPriceUnit: String?, newAllergens: List<Allergen>, newCalories: Double?, newCarbs: Double?, newFats: Double?, newProteins: Double?, newWater: Double?, newSodium: Double?) -> Unit
 ){
     var nameInput by remember{ mutableStateOf(component.itemName) }
     var selectedUnit by remember{ mutableStateOf(component.unit.ifBlank{ MeasurementUnit.GRAM.code }) }
@@ -1510,6 +1540,25 @@ fun EditIngredientDetailsDialog(
     }
     var priceUnitMenuExpanded by remember{ mutableStateOf(false) }
     var selectedAllergens by remember{ mutableStateOf<Set<Allergen>>(component.allergens.toSet()) }
+
+    var caloriesInput by remember{
+        mutableStateOf(component.caloriesKcal?.let{ if (it == 0.0) "" else String.format(java.util.Locale.US, "%.1f", it).replace(".0", "") } ?: "")
+    }
+    var carbsInput by remember{
+        mutableStateOf(component.carbohydratesG?.let{ if (it == 0.0) "" else String.format(java.util.Locale.US, "%.1f", it).replace(".0", "") } ?: "")
+    }
+    var fatsInput by remember{
+        mutableStateOf(component.fatsG?.let{ if (it == 0.0) "" else String.format(java.util.Locale.US, "%.1f", it).replace(".0", "") } ?: "")
+    }
+    var proteinsInput by remember{
+        mutableStateOf(component.proteinsG?.let{ if (it == 0.0) "" else String.format(java.util.Locale.US, "%.1f", it).replace(".0", "") } ?: "")
+    }
+    var waterInput by remember{
+        mutableStateOf(component.waterG?.let{ if (it == 0.0) "" else String.format(java.util.Locale.US, "%.1f", it).replace(".0", "") } ?: "")
+    }
+    var sodiumInput by remember{
+        mutableStateOf(component.sodiumMg?.let{ if (it == 0.0) "" else String.format(java.util.Locale.US, "%.1f", it).replace(".0", "") } ?: "")
+    }
 
     val isQb = MeasurementUnit.isQb(selectedUnit)
     val isInteger = MeasurementUnit.isIntegerUnit(selectedUnit)
@@ -1777,6 +1826,119 @@ fun EditIngredientDetailsDialog(
                             )
                         }
                     }
+
+                    // Sezione Valori Nutrizionali per 100g (Reg. UE 1169/2011)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFE8F5E9).copy(alpha = 0.6f),
+                        border = BorderStroke(1.dp, Color(0xFFA5D6A7)),
+                        modifier = Modifier.fillMaxWidth()
+                    ){
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ){
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ){
+                                Text(
+                                    text = "🥗 Valori Nutrizionali (per 100g)",
+                                    color = Color(0xFF2E7D32),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                                Text(
+                                    text = "Reg. UE 1169/2011",
+                                    color = Color(0xFF388E3C),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ){
+                                OutlinedTextField(
+                                    value = caloriesInput,
+                                    onValueChange = { caloriesInput = it },
+                                    label = { Text("Calorie (kcal)", fontSize = 11.sp) },
+                                    placeholder = { Text("es. 364", fontSize = 11.sp) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                OutlinedTextField(
+                                    value = carbsInput,
+                                    onValueChange = { carbsInput = it },
+                                    label = { Text("Carboidrati (g)", fontSize = 11.sp) },
+                                    placeholder = { Text("es. 72", fontSize = 11.sp) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ){
+                                OutlinedTextField(
+                                    value = fatsInput,
+                                    onValueChange = { fatsInput = it },
+                                    label = { Text("Grassi (g)", fontSize = 11.sp) },
+                                    placeholder = { Text("es. 1.5", fontSize = 11.sp) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                OutlinedTextField(
+                                    value = proteinsInput,
+                                    onValueChange = { proteinsInput = it },
+                                    label = { Text("Proteine (g)", fontSize = 11.sp) },
+                                    placeholder = { Text("es. 12", fontSize = 11.sp) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ){
+                                OutlinedTextField(
+                                    value = waterInput,
+                                    onValueChange = { waterInput = it },
+                                    label = { Text("Acqua (g)", fontSize = 11.sp) },
+                                    placeholder = { Text("es. 14", fontSize = 11.sp) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                OutlinedTextField(
+                                    value = sodiumInput,
+                                    onValueChange = { sodiumInput = it },
+                                    label = { Text("Sodio (mg)", fontSize = 11.sp) },
+                                    placeholder = { Text("es. 5", fontSize = 11.sp) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         },
@@ -1787,13 +1949,25 @@ fun EditIngredientDetailsDialog(
                 onClick ={
                     val finalPrice = priceInput.replace(',', '.').toDoubleOrNull()
                     val effectivePriceUnit = if (finalPrice != null && finalPrice > 0.0) priceUnitSelected else null
+                    val cal = caloriesInput.replace(',', '.').toDoubleOrNull()
+                    val carb = carbsInput.replace(',', '.').toDoubleOrNull()
+                    val fat = fatsInput.replace(',', '.').toDoubleOrNull()
+                    val prot = proteinsInput.replace(',', '.').toDoubleOrNull()
+                    val wat = waterInput.replace(',', '.').toDoubleOrNull()
+                    val sod = sodiumInput.replace(',', '.').toDoubleOrNull()
                     onConfirm(
                         nameInput.trim(),
                         quantityInput.trim(),
                         selectedUnit,
                         finalPrice,
                         effectivePriceUnit,
-                        selectedAllergens.toList()
+                        selectedAllergens.toList(),
+                        cal,
+                        carb,
+                        fat,
+                        prot,
+                        wat,
+                        sod
                     )
                 },
                 enabled = canConfirm,
@@ -1826,6 +2000,7 @@ fun GeminiAssistantDialog(
     onGenerateFullRecipe: (customPrompt: String?) -> Unit,
     onCompleteMissing: (customPrompt: String?) -> Unit,
     onGenerateInstructions: (customPrompt: String?) -> Unit,
+    onEnrichNutrition: () -> Unit,
     onOpenApiKeyConfig: () -> Unit
 ){
     var customPrompt by remember{ mutableStateOf("") }
@@ -2063,6 +2238,37 @@ fun GeminiAssistantDialog(
                                 "Richiede almeno un ingrediente già inserito nella lista."
                             },
                             color = Color(0xFF1A237E),
+                            fontSize = 11.sp,
+                            lineHeight = 15.sp
+                        )
+                    }
+                }
+
+                // Opzione 4: Stima Valori Nutrizionali e Calo Peso Cottura
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFE0F2F1),
+                    border = BorderStroke(1.dp, Color(0xFF80CBC4)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = !isLoading && hasIngredients){
+                            onEnrichNutrition()
+                        }
+                ){
+                    Column(modifier = Modifier.padding(12.dp)){
+                        Text(
+                            text = "🥗 Calcola Valori Nutrizionali & Calo Peso",
+                            color = Color(0xFF00695C),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = if (hasIngredients){
+                                "Stima i 6 nutrienti ufficiali (calorie, carbo, grassi, proteine, acqua, sodio) e calcola la resa di cottura."
+                            } else {
+                                "Richiede almeno un ingrediente inserito nella ricetta."
+                            },
+                            color = Color(0xFF004D40),
                             fontSize = 11.sp,
                             lineHeight = 15.sp
                         )

@@ -45,6 +45,7 @@ abstract class AppDatabase : RoomDatabase(){
         private const val PREFS_NAME = "simo_prefs"
         private const val KEY_PREPOPULATED = "db_prepopulated"
         private const val KEY_MAINTENANCE_DONE = "db_maintenance_v13_done"
+        private const val KEY_MAINTENANCE_V14_DONE = "db_maintenance_v14_done"
         private val prepopulateMutex = kotlinx.coroutines.sync.Mutex()
 
         // Migrazione v9 -> v10: aggiunta colonna allergeni e popolamento per dati predefiniti
@@ -188,6 +189,27 @@ abstract class AppDatabase : RoomDatabase(){
                                 db.execSQL("UPDATE items SET allergens = 'GLUTINE' WHERE id = 'ing_farina_0' AND (allergens = '' OR allergens IS NULL)")
                                 db.execSQL("UPDATE items SET allergens = 'LATTE' WHERE id = 'ing_mozzarella' AND (allergens = '' OR allergens IS NULL)")
                                 prefs.edit().putBoolean(KEY_MAINTENANCE_DONE, true).apply()
+                            } catch (_: Exception){}
+                        }
+
+                        // Manutenzione v14: compila automaticamente le 3 ricette di default e tutti i loro ingredienti
+                        if (!prefs.getBoolean(KEY_MAINTENANCE_V14_DONE, false)){
+                            try{
+                                for (item in PrepopulateData.DEFAULT_ITEMS){
+                                    if (item.caloriesKcal != null){
+                                        db.execSQL(
+                                            "UPDATE items SET caloriesKcal = ?, carbohydratesG = ?, fatsG = ?, proteinsG = ?, waterG = ?, sodiumMg = ? WHERE id = ?",
+                                            arrayOf(item.caloriesKcal, item.carbohydratesG, item.fatsG, item.proteinsG, item.waterG, item.sodiumMg, item.id)
+                                        )
+                                    }
+                                }
+                                for (rec in PrepopulateData.DEFAULT_RECIPES){
+                                    db.execSQL(
+                                        "UPDATE recipes SET cookingWeightModifier = ? WHERE id = ?",
+                                        arrayOf(rec.cookingWeightModifier, rec.id)
+                                    )
+                                }
+                                prefs.edit().putBoolean(KEY_MAINTENANCE_V14_DONE, true).apply()
                             } catch (_: Exception){}
                         }
                         ensurePrepopulated(database, context)

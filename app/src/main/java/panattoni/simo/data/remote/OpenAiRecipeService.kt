@@ -269,6 +269,55 @@ class OpenAiRecipeService{
     }
 
     /**
+     * Stima con precisione scientifica i 6 valori nutrizionali per 100g per ciascun ingrediente
+     * e suggerisce il modificatore peso in cottura (% resa o calo).
+     */
+    suspend fun enrichNutritionalValues(
+        apiKey: String,
+        recipeName: String,
+        ingredients: List<GeminiIngredient>,
+        preferredModel: String = OpenAiModel.DEFAULT.modelId
+    ): Result<GeminiRecipeResponse> = withContext(Dispatchers.IO){
+        val trimmedKey = apiKey.trim()
+        if (trimmedKey.isBlank()){
+            return@withContext Result.failure(IllegalArgumentException("Inserisci la tua API Key di OpenAI (ChatGPT)."))
+        }
+
+        val ingredientsListText = ingredients.mapIndexed{ idx, ing ->
+            "${idx + 1}. ${ing.name} (dose: ${ing.quantity} ${ing.unit})"
+        }.joinToString("\n")
+
+        val prompt = buildString{
+            append("Sei un esperto nutrizionista e chimico alimentare per l'app SIMO.\n")
+            append("Per la ricetta \"$recipeName\", analizza i seguenti ingredienti:\n")
+            append(ingredientsListText)
+            append("\n\nCOMPITI:\n")
+            append("1. Per ciascun ingrediente determina con accuratezza i 6 valori nutrizionali per 100g di materia prima: caloriesKcal, carbohydratesG, fatsG, proteinsG, waterG (acqua in g), sodiumMg (sodio in mg).\n")
+            append("2. Determina 'cookingWeightModifier' (% di calo/aumento peso in cottura, es. -12.0 per forno/evaporazione, +120.0 per pasta/riso, 0.0 per crudo).\n\n")
+            append("""
+                Rispondi esclusivamente con un JSON valido nel seguente formato:
+                {
+                  "name": "$recipeName",
+                  "cookingWeightModifier": -10.0,
+                  "ingredients": [
+                    {
+                      "name": "Nome ingrediente",
+                      "caloriesKcal": 364.0,
+                      "carbohydratesG": 76.3,
+                      "fatsG": 1.0,
+                      "proteinsG": 10.3,
+                      "waterG": 14.0,
+                      "sodiumMg": 2.0
+                    }
+                  ]
+                }
+            """.trimIndent())
+        }
+
+        callOpenAiApi(trimmedKey, prompt, preferredModel)
+    }
+
+    /**
      * Esegue la chiamata HTTP all'API di OpenAI gestendo la gerarchia di fallback tra modelli.
      */
     private fun callOpenAiApi(
@@ -414,6 +463,13 @@ class OpenAiRecipeService{
                 val allergensArr = ingObj.optJSONArray("allergens")
                 val allergens = parseAllergens(allergensArr)
 
+                val caloriesKcal = if (ingObj.has("caloriesKcal") && !ingObj.isNull("caloriesKcal")) ingObj.optDouble("caloriesKcal", 0.0).takeIf{ it >= 0.0 } else null
+                val carbohydratesG = if (ingObj.has("carbohydratesG") && !ingObj.isNull("carbohydratesG")) ingObj.optDouble("carbohydratesG", 0.0).takeIf{ it >= 0.0 } else null
+                val fatsG = if (ingObj.has("fatsG") && !ingObj.isNull("fatsG")) ingObj.optDouble("fatsG", 0.0).takeIf{ it >= 0.0 } else null
+                val proteinsG = if (ingObj.has("proteinsG") && !ingObj.isNull("proteinsG")) ingObj.optDouble("proteinsG", 0.0).takeIf{ it >= 0.0 } else null
+                val waterG = if (ingObj.has("waterG") && !ingObj.isNull("waterG")) ingObj.optDouble("waterG", 0.0).takeIf{ it >= 0.0 } else null
+                val sodiumMg = if (ingObj.has("sodiumMg") && !ingObj.isNull("sodiumMg")) ingObj.optDouble("sodiumMg", 0.0).takeIf{ it >= 0.0 } else null
+
                 ingredientsList.add(
                     GeminiIngredient(
                         name = ingName,
@@ -421,11 +477,22 @@ class OpenAiRecipeService{
                         unit = unit,
                         pricePerUnit = pricePerUnit,
                         priceUnit = priceUnit,
-                        allergens = allergens
+                        allergens = allergens,
+                        caloriesKcal = caloriesKcal,
+                        carbohydratesG = carbohydratesG,
+                        fatsG = fatsG,
+                        proteinsG = proteinsG,
+                        waterG = waterG,
+                        sodiumMg = sodiumMg
                     )
                 )
             }
         }
+
+        val cookingWeightModifier = if (recipeJson.has("cookingWeightModifier") && !recipeJson.isNull("cookingWeightModifier")){
+            val mod = recipeJson.optDouble("cookingWeightModifier", 0.0)
+            if (mod.isFinite()) mod else null
+        } else null
 
         return GeminiRecipeResponse(
             recipeName = name,
@@ -434,7 +501,8 @@ class OpenAiRecipeService{
             baseYield = baseYield,
             yieldUnit = yieldUnit,
             ingredients = ingredientsList,
-            instructions = instructions
+            instructions = instructions,
+            cookingWeightModifier = cookingWeightModifier
         )
     }
 

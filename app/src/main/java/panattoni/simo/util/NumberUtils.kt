@@ -1,4 +1,4 @@
-﻿package panattoni.simo.util
+package panattoni.simo.util
 
 import java.util.Locale
 
@@ -76,5 +76,18 @@ object NumberUtils{
             return panattoni.simo.domain.MeasurementUnit.roundIntegerAmount(amount).toString()
         }
         return formatAmount(amount)
+    }
+
+    /**
+     * Formatta un peso in grammi o chilogrammi (es. 750 g o 1.2 kg).
+     */
+    fun formatWeight(grams: Double): String{
+        if (grams <= 0.0) return "0 g"
+        return if (grams >= 1000.0){
+            val kg = grams / 1000.0
+            "${formatAmount(kg)} kg"
+        } else{
+            "${formatAmount(grams)} g"
+        }
     }
 }

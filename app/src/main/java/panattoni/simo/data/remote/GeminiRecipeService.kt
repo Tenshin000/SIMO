@@ -17,7 +17,14 @@ data class GeminiIngredient(
     val unit: String,
     val pricePerUnit: Double? = null,
     val priceUnit: String? = null,
-    val allergens: List<Allergen> = emptyList()
+    val allergens: List<Allergen> = emptyList(),
+    // Valori nutrizionali per 100g di ingrediente crudo
+    val caloriesKcal: Double? = null,
+    val carbohydratesG: Double? = null,
+    val fatsG: Double? = null,
+    val proteinsG: Double? = null,
+    val waterG: Double? = null,
+    val sodiumMg: Double? = null
 )
 
 data class GeminiRecipeResponse(
@@ -27,7 +34,9 @@ data class GeminiRecipeResponse(
     val baseYield: Double? = null,
     val yieldUnit: String? = null,
     val ingredients: List<GeminiIngredient> = emptyList(),
-    val instructions: String? = null
+    val instructions: String? = null,
+    // Modificatore peso in cottura in percentuale (es. -12.0 per calo del 12%, +120.0 per pasta/riso)
+    val cookingWeightModifier: Double? = null
 )
 
 enum class GeminiModel(
@@ -112,6 +121,11 @@ class GeminiRecipeService{
             4. PROCEDIMENTO NUMERATO:
                - I passaggi devono essere rigorosamente numerati ("1. ...", "2. ...", "3. ...").
                - I passaggi DEVONO essere strettamente relativi agli ingredienti definiti, citandoli esplicitamente nei passaggi corrispondenti.
+            5. VALORI NUTRIZIONALI PER 100g E MODIFICATORE COTTURA:
+               - Per ciascun ingrediente, stima con precisione scientifica i 6 valori nutrizionali per 100g di materia prima:
+                 'caloriesKcal' (calorie kcal), 'carbohydratesG' (carboidrati g), 'fatsG' (grassi g), 'proteinsG' (proteine g), 'waterG' (acqua g), 'sodiumMg' (sodio mg).
+               - Per la ricetta, stima 'cookingWeightModifier' (% di calo peso o resa in cottura):
+                 es. -12.0 per evaporazione/calo in forno, +120.0 per pasta o riso che raddoppiano, 0.0 per piatti a freddo.
             
             DEVI RISPONDERE ESCLUSIVAMENTE CON UN DOCUMENTO JSON VALIDO.
         """.trimIndent()
@@ -157,6 +171,7 @@ class GeminiRecipeService{
                   "category": "Una tra Dolci, Pizze, Panetteria, Antipasti, Primi, Secondi, Contorni, Zuppe, Alcolici, Analcolici, Caffetteria, Altro",
                   "baseYield": 4.0,
                   "yieldUnit": "porzioni" o "cornetti" o "pizze" o "g",
+                  "cookingWeightModifier": -10.0,
                   "ingredients": [
                    {
                       "name": "Nome ingrediente",
@@ -164,7 +179,13 @@ class GeminiRecipeService{
                       "unit": "g" o "ml" o "unità" o "pz" o "q.b.",
                       "pricePerUnit": 1.20,
                       "priceUnit": "kg" o "l" o "unità",
-                      "allergens": ["GLUTINE"]
+                      "allergens": ["GLUTINE"],
+                      "caloriesKcal": 364.0,
+                      "carbohydratesG": 76.3,
+                      "fatsG": 1.0,
+                      "proteinsG": 10.3,
+                      "waterG": 14.0,
+                      "sodiumMg": 2.0
                     }
                   ],
                   "instructions": "1. Primo passaggio...\n2. Secondo passaggio..."
@@ -219,6 +240,7 @@ class GeminiRecipeService{
             append("4. Rileva e assegna gli allergeni UE per ciascun ingrediente (tra i 14 allergeni consentiti).\n")
             append("5. Se mancano ingredienti essenziali per la riuscita della ricetta, aggiungili con dosi, costi e allergeni completi.\n")
             append("6. Scrivi il procedimento di preparazione passo-passo numerato ('1. ...', '2. ...') menzionando tutti gli ingredienti.\n")
+            append("7. Stima con precisione scientifica i 6 valori nutrizionali per 100g ('caloriesKcal', 'carbohydratesG', 'fatsG', 'proteinsG', 'waterG', 'sodiumMg') per ogni ingrediente e il 'cookingWeightModifier' (% calo/aumento peso cottura) per la ricetta.\n")
             if (!userCustomPrompt.isNullOrBlank()){
                 append("Istruzioni extra dell'utente: \"$userCustomPrompt\".\n")
             }
@@ -230,6 +252,7 @@ class GeminiRecipeService{
                   "category": "Dolci",
                   "baseYield": $baseYield,
                   "yieldUnit": "$yieldUnit",
+                  "cookingWeightModifier": -10.0,
                   "ingredients": [
                    {
                       "name": "Nome ingrediente",
@@ -237,10 +260,65 @@ class GeminiRecipeService{
                       "unit": "g",
                       "pricePerUnit": 1.20,
                       "priceUnit": "kg",
-                      "allergens": ["GLUTINE"]
+                      "allergens": ["GLUTINE"],
+                      "caloriesKcal": 364.0,
+                      "carbohydratesG": 76.3,
+                      "fatsG": 1.0,
+                      "proteinsG": 10.3,
+                      "waterG": 14.0,
+                      "sodiumMg": 2.0
                     }
                   ],
                   "instructions": "1. ...\n2. ..."
+                }
+            """.trimIndent())
+        }
+
+        callGeminiApi(trimmedKey, prompt, preferredModel)
+    }
+
+    /**
+     * Stima con precisione scientifica i 6 valori nutrizionali per 100g per ciascun ingrediente
+     * e suggerisce il modificatore peso in cottura (% resa o calo).
+     */
+    suspend fun enrichNutritionalValues(
+        apiKey: String,
+        recipeName: String,
+        ingredients: List<GeminiIngredient>,
+        preferredModel: String = GeminiModel.DEFAULT.modelId
+    ): Result<GeminiRecipeResponse> = withContext(Dispatchers.IO){
+        val trimmedKey = apiKey.trim()
+        if (trimmedKey.isBlank()){
+            return@withContext Result.failure(IllegalArgumentException("Inserisci la tua API Key di Google Gemini."))
+        }
+
+        val ingredientsListText = ingredients.mapIndexed{ idx, ing ->
+            "${idx + 1}. ${ing.name} (dose: ${ing.quantity} ${ing.unit})"
+        }.joinToString("\n")
+
+        val prompt = buildString{
+            append("Sei un esperto nutrizionista e chimico alimentare per l'app SIMO.\n")
+            append("Per la ricetta \"$recipeName\", analizza i seguenti ingredienti:\n")
+            append(ingredientsListText)
+            append("\n\nCOMPITI:\n")
+            append("1. Per ciascun ingrediente determina i 6 valori nutrizionali per 100g di materia prima: caloriesKcal, carbohydratesG, fatsG, proteinsG, waterG (acqua in g), sodiumMg (sodio in mg).\n")
+            append("2. Determina 'cookingWeightModifier' (% di calo/aumento peso in cottura, es. -12.0 per forno/evaporazione, +120.0 per pasta/riso, 0.0 per crudo).\n\n")
+            append("""
+                Rispondi esclusivamente con un JSON valido nel seguente formato:
+                {
+                  "recipeName": "$recipeName",
+                  "cookingWeightModifier": -10.0,
+                  "ingredients": [
+                    {
+                      "name": "Nome ingrediente",
+                      "caloriesKcal": 364.0,
+                      "carbohydratesG": 76.3,
+                      "fatsG": 1.0,
+                      "proteinsG": 10.3,
+                      "waterG": 14.0,
+                      "sodiumMg": 2.0
+                    }
+                  ]
                 }
             """.trimIndent())
         }
@@ -472,6 +550,13 @@ class GeminiRecipeService{
                     allergens.addAll(parseAllergens(allergensArr))
                 }
 
+                val caloriesKcal = if (ingObj.has("caloriesKcal") && !ingObj.isNull("caloriesKcal")) ingObj.optDouble("caloriesKcal", 0.0).takeIf{ it >= 0.0 } else null
+                val carbohydratesG = if (ingObj.has("carbohydratesG") && !ingObj.isNull("carbohydratesG")) ingObj.optDouble("carbohydratesG", 0.0).takeIf{ it >= 0.0 } else null
+                val fatsG = if (ingObj.has("fatsG") && !ingObj.isNull("fatsG")) ingObj.optDouble("fatsG", 0.0).takeIf{ it >= 0.0 } else null
+                val proteinsG = if (ingObj.has("proteinsG") && !ingObj.isNull("proteinsG")) ingObj.optDouble("proteinsG", 0.0).takeIf{ it >= 0.0 } else null
+                val waterG = if (ingObj.has("waterG") && !ingObj.isNull("waterG")) ingObj.optDouble("waterG", 0.0).takeIf{ it >= 0.0 } else null
+                val sodiumMg = if (ingObj.has("sodiumMg") && !ingObj.isNull("sodiumMg")) ingObj.optDouble("sodiumMg", 0.0).takeIf{ it >= 0.0 } else null
+
                 ingredientsList.add(
                     GeminiIngredient(
                         name = name,
@@ -479,11 +564,22 @@ class GeminiRecipeService{
                         unit = unit,
                         pricePerUnit = price,
                         priceUnit = cleanPriceUnit,
-                        allergens = allergens.distinct()
+                        allergens = allergens.distinct(),
+                        caloriesKcal = caloriesKcal,
+                        carbohydratesG = carbohydratesG,
+                        fatsG = fatsG,
+                        proteinsG = proteinsG,
+                        waterG = waterG,
+                        sodiumMg = sodiumMg
                     )
                 )
             }
         }
+
+        val cookingWeightModifier = if (recipeJson.has("cookingWeightModifier") && !recipeJson.isNull("cookingWeightModifier")){
+            val mod = recipeJson.optDouble("cookingWeightModifier", 0.0)
+            if (mod.isFinite()) mod else null
+        } else null
 
         return GeminiRecipeResponse(
             recipeName = recipeName,
@@ -492,7 +588,8 @@ class GeminiRecipeService{
             baseYield = baseYield,
             yieldUnit = yieldUnit,
             ingredients = ingredientsList,
-            instructions = instructions
+            instructions = instructions,
+            cookingWeightModifier = cookingWeightModifier
         )
     }
 
