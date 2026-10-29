@@ -999,7 +999,7 @@ fun RecipeAllergensCard(
 }
 
 /**
- * Riquadro grafico "Dichiarazione Nutrizionale" conforme al Regolamento UE n. 1169/2011.
+ * Riquadro grafico "Dichiarazione Nutrizionale (Stima)" conforme al Regolamento UE n. 1169/2011.
  * Mostra valori nutrizionali per 100g e a porzione, calo peso/resa di cottura ed equivalenza sale/sodio.
  */
 @Composable
@@ -1023,9 +1023,9 @@ fun RecipeNutritionCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(14.dp) // Spaziatura ottimizzata per garantire la massima larghezza alla tabella
         ){
-            // Header
+            // Intestazione con chiara indicazione "(Stima)"
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1047,13 +1047,13 @@ fun RecipeNutritionCard(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column{
                         Text(
-                            text = "Dichiarazione Nutrizionale",
+                            text = "Dichiarazione Nutrizionale (Stima)",
                             color = MacaronText,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
+                            fontSize = 15.sp
                         )
                         Text(
-                            text = "Regolamento (UE) n. 1169/2011",
+                            text = "Regolamento (UE) n. 1169/2011 • Stima indicativa",
                             color = MacaronSubtleText,
                             fontSize = 11.sp
                         )
@@ -1109,7 +1109,7 @@ fun RecipeNutritionCard(
                     "1 $singUnit"
                 }
 
-                // Tabella Nutrizionale Stile Etichetta UE
+                // Tabella Nutrizionale Stile Etichetta UE con larghezze ribilanciate per non mandare a capo i valori energetici
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = MacaronSurfaceVariant.copy(alpha = 0.35f),
@@ -1117,12 +1117,12 @@ fun RecipeNutritionCard(
                     modifier = Modifier.fillMaxWidth()
                 ){
                     Column(modifier = Modifier.fillMaxWidth()){
-                        // Intestazione Tabella
+                        // Intestazione Tabella: pesi colonne ottimizzati per le cifre kJ/kcal
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(Color(0xFF2E7D32))
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                .padding(horizontal = 10.dp, vertical = 7.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ){
@@ -1130,23 +1130,23 @@ fun RecipeNutritionCard(
                                 text = "VALORI MEDI",
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
-                                modifier = Modifier.weight(1.5f)
+                                fontSize = 10.5.sp,
+                                modifier = Modifier.weight(1.15f)
                             )
                             Text(
                                 text = "Per 100 g",
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
-                                modifier = Modifier.weight(1.1f),
+                                fontSize = 10.5.sp,
+                                modifier = Modifier.weight(1.425f),
                                 textAlign = androidx.compose.ui.text.style.TextAlign.End
                             )
                             Text(
                                 text = portionLabel,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
-                                modifier = Modifier.weight(1.2f),
+                                fontSize = 10.5.sp,
+                                modifier = Modifier.weight(1.425f),
                                 textAlign = androidx.compose.ui.text.style.TextAlign.End
                             )
                         }
@@ -1203,31 +1203,35 @@ fun RecipeNutritionCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(bg)
-                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ){
                                 Text(
                                     text = row.name,
                                     fontWeight = if (row.isBold) FontWeight.Bold else FontWeight.Normal,
-                                    fontSize = 11.5.sp,
+                                    fontSize = 10.5.sp,
                                     color = MacaronText,
-                                    modifier = Modifier.weight(1.5f)
+                                    modifier = Modifier.weight(1.15f)
                                 )
                                 Text(
                                     text = row.per100g,
                                     fontWeight = if (row.isBold) FontWeight.Bold else FontWeight.Normal,
-                                    fontSize = 11.sp,
+                                    fontSize = 10.sp,
                                     color = MacaronText,
-                                    modifier = Modifier.weight(1.1f),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.weight(1.425f),
                                     textAlign = androidx.compose.ui.text.style.TextAlign.End
                                 )
                                 Text(
                                     text = row.perPortion,
                                     fontWeight = if (row.isBold) FontWeight.Bold else FontWeight.Normal,
-                                    fontSize = 11.sp,
+                                    fontSize = 10.sp,
                                     color = MacaronText,
-                                    modifier = Modifier.weight(1.2f),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.weight(1.425f),
                                     textAlign = androidx.compose.ui.text.style.TextAlign.End
                                 )
                             }

@@ -350,7 +350,8 @@ object RecipePdfExporter{
             paint.color = nutritionGreen
             paint.textSize = 12f
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            canvas.drawText("DICHIARAZIONE NUTRIZIONALE (Regolamento UE n. 1169/2011)", MARGIN, currentY + 12f, paint)
+            // Intestazione con chiara dicitura di stima
+            canvas.drawText("DICHIARAZIONE NUTRIZIONALE (Stima - Reg. UE n. 1169/2011)", MARGIN, currentY + 12f, paint)
             currentY += 18f
 
             // Bordo esterno del riquadro grafico
