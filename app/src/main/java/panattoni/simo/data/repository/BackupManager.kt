@@ -1,4 +1,4 @@
-﻿package panattoni.simo.data.repository
+package panattoni.simo.data.repository
 
 import android.content.Context
 import android.net.Uri
@@ -58,11 +58,11 @@ class BackupManager(private val database: AppDatabase){
 
     suspend fun generateFullExportJson(): String = withContext(Dispatchers.IO){
         val rootJson = JSONObject()
-        rootJson.put("version", 1)
+        rootJson.put("version", 2)
         rootJson.put("appName", "SIMO")
         rootJson.put("timestamp", System.currentTimeMillis())
 
-        // 1. Items (Materie prime e riferimenti ricette)
+        // 1. Items (Materie prime, valori nutrizionali e riferimenti ricette)
         val itemsList = database.itemDao().getAllItemsDirect()
         val itemsJson = JSONArray()
         for (item in itemsList){
@@ -83,11 +83,30 @@ class BackupManager(private val database: AppDatabase){
             if (item.allergens.isNotBlank()){
                 obj.put("allergens", item.allergens)
             }
+            // Nuovi 6 valori nutrizionali per 100g (Versione 2)
+            if (item.caloriesKcal != null){
+                obj.put("caloriesKcal", item.caloriesKcal)
+            }
+            if (item.carbohydratesG != null){
+                obj.put("carbohydratesG", item.carbohydratesG)
+            }
+            if (item.fatsG != null){
+                obj.put("fatsG", item.fatsG)
+            }
+            if (item.proteinsG != null){
+                obj.put("proteinsG", item.proteinsG)
+            }
+            if (item.waterG != null){
+                obj.put("waterG", item.waterG)
+            }
+            if (item.sodiumMg != null){
+                obj.put("sodiumMg", item.sodiumMg)
+            }
             itemsJson.put(obj)
         }
         rootJson.put("items", itemsJson)
 
-        // 2. Ricette
+        // 2. Ricette (con modificatore peso cottura)
         val recipesList = database.recipeDao().getAllRecipesDirect()
         val recipesJson = JSONArray()
         for (recipe in recipesList){
@@ -102,6 +121,8 @@ class BackupManager(private val database: AppDatabase){
             obj.put("isFavorite", recipe.isFavorite)
             obj.put("category", recipe.category)
             obj.put("createdAt", recipe.createdAt)
+            // Modificatore resa/peso in cottura (Versione 2)
+            obj.put("cookingWeightModifier", recipe.cookingWeightModifier)
             recipesJson.put(obj)
         }
         rootJson.put("recipes", recipesJson)
@@ -177,7 +198,13 @@ class BackupManager(private val database: AppDatabase){
                             gramsPerUnit = if (obj.has("gramsPerUnit")) obj.optDouble("gramsPerUnit", 0.0).takeIf{ it > 0.0 } else null,
                             pricePerUnit = if (obj.has("pricePerUnit")) obj.optDouble("pricePerUnit", 0.0).takeIf{ it > 0.0 } else null,
                             priceUnit = if (obj.has("priceUnit")) obj.optString("priceUnit", "").trim().ifEmpty{ null } else null,
-                            allergens = obj.optString("allergens", "").trim()
+                            allergens = obj.optString("allergens", "").trim(),
+                            caloriesKcal = if (obj.has("caloriesKcal") && !obj.isNull("caloriesKcal")) obj.optDouble("caloriesKcal", 0.0).takeIf{ it >= 0.0 } else null,
+                            carbohydratesG = if (obj.has("carbohydratesG") && !obj.isNull("carbohydratesG")) obj.optDouble("carbohydratesG", 0.0).takeIf{ it >= 0.0 } else null,
+                            fatsG = if (obj.has("fatsG") && !obj.isNull("fatsG")) obj.optDouble("fatsG", 0.0).takeIf{ it >= 0.0 } else null,
+                            proteinsG = if (obj.has("proteinsG") && !obj.isNull("proteinsG")) obj.optDouble("proteinsG", 0.0).takeIf{ it >= 0.0 } else null,
+                            waterG = if (obj.has("waterG") && !obj.isNull("waterG")) obj.optDouble("waterG", 0.0).takeIf{ it >= 0.0 } else null,
+                            sodiumMg = if (obj.has("sodiumMg") && !obj.isNull("sodiumMg")) obj.optDouble("sodiumMg", 0.0).takeIf{ it >= 0.0 } else null
                         )
                         itemsMap[id] = item
                     }
@@ -206,7 +233,8 @@ class BackupManager(private val database: AppDatabase){
                                 isDefault = isDefaultRecipe,
                                 isFavorite = obj.optBoolean("isFavorite", false),
                                 category = obj.optString("category", "Altro").trim().ifEmpty{ "Altro" },
-                                createdAt = obj.optLong("createdAt", System.currentTimeMillis())
+                                createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
+                                cookingWeightModifier = if (obj.has("cookingWeightModifier")) obj.optDouble("cookingWeightModifier", 0.0) else 0.0
                             )
                         recipesToInsert.add(recipe)
 

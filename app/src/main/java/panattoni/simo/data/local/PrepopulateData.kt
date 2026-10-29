@@ -16,32 +16,104 @@ object PrepopulateData{
     val ID_RECIPE_PIZZA = "recipe_pizza_margherita"
 
     val DEFAULT_ITEMS: List<ItemEntity> = listOf(
-        // Materie prime per Crema Pasticcera
-        ItemEntity(id = "ing_latte", name = "Latte intero", type = "RAW_INGREDIENT", defaultUnit = "ml", pricePerUnit = 1.40, priceUnit = "l", allergens = Allergen.LATTE.id),
-        ItemEntity(id = "ing_tuorli", name = "Tuorli d'uovo", type = "RAW_INGREDIENT", defaultUnit = "unità", gramsPerUnit = 20.0, pricePerUnit = 0.35, priceUnit = "unità", allergens = Allergen.UOVA.id),
-        ItemEntity(id = "ing_zucchero", name = "Zucchero semolato", type = "RAW_INGREDIENT", defaultUnit = "g", pricePerUnit = 1.20, priceUnit = "kg"),
-        ItemEntity(id = "ing_amido_mais", name = "Amido di mais (maizena)", type = "RAW_INGREDIENT", defaultUnit = "g", pricePerUnit = 2.50, priceUnit = "kg"),
-        ItemEntity(id = "ing_scorza_limone", name = "Scorza di limone", type = "RAW_INGREDIENT", defaultUnit = "unità", pricePerUnit = 0.50, priceUnit = "unità"),
-        ItemEntity(id = "ing_vaniglia", name = "Baccello di vaniglia", type = "RAW_INGREDIENT", defaultUnit = "unità", pricePerUnit = 2.00, priceUnit = "unità"),
+        // Materie prime per Crema Pasticcera con 6 valori nutrizionali per 100g
+        ItemEntity(
+            id = "ing_latte", name = "Latte intero", type = "RAW_INGREDIENT", defaultUnit = "ml",
+            pricePerUnit = 1.40, priceUnit = "l", allergens = Allergen.LATTE.id,
+            caloriesKcal = 64.0, carbohydratesG = 4.8, fatsG = 3.6, proteinsG = 3.3, waterG = 87.5, sodiumMg = 44.0
+        ),
+        ItemEntity(
+            id = "ing_tuorli", name = "Tuorli d'uovo", type = "RAW_INGREDIENT", defaultUnit = "unità",
+            gramsPerUnit = 20.0, pricePerUnit = 0.35, priceUnit = "unità", allergens = Allergen.UOVA.id,
+            caloriesKcal = 322.0, carbohydratesG = 3.6, fatsG = 26.5, proteinsG = 15.9, waterG = 51.0, sodiumMg = 48.0
+        ),
+        ItemEntity(
+            id = "ing_zucchero", name = "Zucchero semolato", type = "RAW_INGREDIENT", defaultUnit = "g",
+            pricePerUnit = 1.20, priceUnit = "kg",
+            caloriesKcal = 387.0, carbohydratesG = 99.9, fatsG = 0.0, proteinsG = 0.0, waterG = 0.1, sodiumMg = 1.0
+        ),
+        ItemEntity(
+            id = "ing_amido_mais", name = "Amido di mais (maizena)", type = "RAW_INGREDIENT", defaultUnit = "g",
+            pricePerUnit = 2.50, priceUnit = "kg",
+            caloriesKcal = 381.0, carbohydratesG = 91.0, fatsG = 0.1, proteinsG = 0.3, waterG = 8.5, sodiumMg = 9.0
+        ),
+        ItemEntity(
+            id = "ing_scorza_limone", name = "Scorza di limone", type = "RAW_INGREDIENT", defaultUnit = "unità",
+            pricePerUnit = 0.50, priceUnit = "unità",
+            caloriesKcal = 47.0, carbohydratesG = 16.0, fatsG = 0.3, proteinsG = 1.5, waterG = 81.6, sodiumMg = 6.0
+        ),
+        ItemEntity(
+            id = "ing_vaniglia", name = "Baccello di vaniglia", type = "RAW_INGREDIENT", defaultUnit = "unità",
+            pricePerUnit = 2.00, priceUnit = "unità",
+            caloriesKcal = 288.0, carbohydratesG = 12.6, fatsG = 0.1, proteinsG = 0.1, waterG = 52.6, sodiumMg = 9.0
+        ),
 
         // Materie prime aggiuntive per Cornetti
-        ItemEntity(id = "ing_farina_manitoba", name = "Farina Manitoba", type = "RAW_INGREDIENT", defaultUnit = "g", pricePerUnit = 1.60, priceUnit = "kg", allergens = Allergen.GLUTINE.id),
-        ItemEntity(id = "ing_farina_00", name = "Farina 00", type = "RAW_INGREDIENT", defaultUnit = "g", pricePerUnit = 1.10, priceUnit = "kg", allergens = Allergen.GLUTINE.id),
-        ItemEntity(id = "ing_uova", name = "Uova intere", type = "RAW_INGREDIENT", defaultUnit = "unità", gramsPerUnit = 50.0, pricePerUnit = 0.30, priceUnit = "unità", allergens = Allergen.UOVA.id),
-        ItemEntity(id = "ing_burro", name = "Burro da laminazione", type = "RAW_INGREDIENT", defaultUnit = "g", pricePerUnit = 9.00, priceUnit = "kg", allergens = Allergen.LATTE.id),
-        ItemEntity(id = "ing_lievito_birra", name = "Lievito di birra fresco", type = "RAW_INGREDIENT", defaultUnit = "g", pricePerUnit = 0.40, priceUnit = "pz"),
-        ItemEntity(id = "ing_sale", name = "Sale fino", type = "RAW_INGREDIENT", defaultUnit = "g", pricePerUnit = 0.50, priceUnit = "kg"),
+        ItemEntity(
+            id = "ing_farina_manitoba", name = "Farina Manitoba", type = "RAW_INGREDIENT", defaultUnit = "g",
+            pricePerUnit = 1.60, priceUnit = "kg", allergens = Allergen.GLUTINE.id,
+            caloriesKcal = 364.0, carbohydratesG = 72.0, fatsG = 1.5, proteinsG = 14.0, waterG = 12.0, sodiumMg = 2.0
+        ),
+        ItemEntity(
+            id = "ing_farina_00", name = "Farina 00", type = "RAW_INGREDIENT", defaultUnit = "g",
+            pricePerUnit = 1.10, priceUnit = "kg", allergens = Allergen.GLUTINE.id,
+            caloriesKcal = 364.0, carbohydratesG = 76.3, fatsG = 1.0, proteinsG = 10.3, waterG = 14.0, sodiumMg = 2.0
+        ),
+        ItemEntity(
+            id = "ing_uova", name = "Uova intere", type = "RAW_INGREDIENT", defaultUnit = "unità",
+            gramsPerUnit = 50.0, pricePerUnit = 0.30, priceUnit = "unità", allergens = Allergen.UOVA.id,
+            caloriesKcal = 143.0, carbohydratesG = 0.7, fatsG = 9.5, proteinsG = 12.6, waterG = 76.0, sodiumMg = 142.0
+        ),
+        ItemEntity(
+            id = "ing_burro", name = "Burro da laminazione", type = "RAW_INGREDIENT", defaultUnit = "g",
+            pricePerUnit = 9.00, priceUnit = "kg", allergens = Allergen.LATTE.id,
+            caloriesKcal = 717.0, carbohydratesG = 0.1, fatsG = 81.1, proteinsG = 0.9, waterG = 16.0, sodiumMg = 11.0
+        ),
+        ItemEntity(
+            id = "ing_lievito_birra", name = "Lievito di birra fresco", type = "RAW_INGREDIENT", defaultUnit = "g",
+            pricePerUnit = 0.40, priceUnit = "pz",
+            caloriesKcal = 105.0, carbohydratesG = 18.0, fatsG = 1.9, proteinsG = 8.4, waterG = 69.0, sodiumMg = 30.0
+        ),
+        ItemEntity(
+            id = "ing_sale", name = "Sale fino", type = "RAW_INGREDIENT", defaultUnit = "g",
+            pricePerUnit = 0.50, priceUnit = "kg",
+            caloriesKcal = 0.0, carbohydratesG = 0.0, fatsG = 0.0, proteinsG = 0.0, waterG = 0.2, sodiumMg = 38758.0
+        ),
 
         // La Crema come RECIPE Item
         ItemEntity(id = ID_RECIPE_CREMA, name = "Crema Pasticcera Classica", type = "RECIPE", defaultUnit = "g", allergens = "${Allergen.UOVA.id},${Allergen.LATTE.id}"),
 
         // Materie prime per Pizza Margherita
-        ItemEntity(id = "ing_farina_0", name = "Farina tipo 0 (media forza)", type = "RAW_INGREDIENT", defaultUnit = "g", pricePerUnit = 1.20, priceUnit = "kg", allergens = Allergen.GLUTINE.id),
-        ItemEntity(id = "ing_acqua", name = "Acqua naturale tiepida", type = "RAW_INGREDIENT", defaultUnit = "ml", pricePerUnit = 0.10, priceUnit = "l"),
-        ItemEntity(id = "ing_olio_evo", name = "Olio extravergine d'oliva", type = "RAW_INGREDIENT", defaultUnit = "ml", pricePerUnit = 9.50, priceUnit = "l"),
-        ItemEntity(id = "ing_pomodori_pelati", name = "Pomodori pelati San Marzano", type = "RAW_INGREDIENT", defaultUnit = "g", pricePerUnit = 2.00, priceUnit = "kg"),
-        ItemEntity(id = "ing_mozzarella", name = "Mozzarella fiordilatte", type = "RAW_INGREDIENT", defaultUnit = "g", pricePerUnit = 8.50, priceUnit = "kg", allergens = Allergen.LATTE.id),
-        ItemEntity(id = "ing_basilico", name = "Foglie di basilico fresco", type = "RAW_INGREDIENT", defaultUnit = "unità", pricePerUnit = 0.05, priceUnit = "unità")
+        ItemEntity(
+            id = "ing_farina_0", name = "Farina tipo 0 (media forza)", type = "RAW_INGREDIENT", defaultUnit = "g",
+            pricePerUnit = 1.20, priceUnit = "kg", allergens = Allergen.GLUTINE.id,
+            caloriesKcal = 364.0, carbohydratesG = 74.0, fatsG = 1.2, proteinsG = 11.5, waterG = 13.0, sodiumMg = 2.0
+        ),
+        ItemEntity(
+            id = "ing_acqua", name = "Acqua naturale tiepida", type = "RAW_INGREDIENT", defaultUnit = "ml",
+            pricePerUnit = 0.10, priceUnit = "l",
+            caloriesKcal = 0.0, carbohydratesG = 0.0, fatsG = 0.0, proteinsG = 0.0, waterG = 100.0, sodiumMg = 5.0
+        ),
+        ItemEntity(
+            id = "ing_olio_evo", name = "Olio extravergine d'oliva", type = "RAW_INGREDIENT", defaultUnit = "ml",
+            pricePerUnit = 9.50, priceUnit = "l",
+            caloriesKcal = 884.0, carbohydratesG = 0.0, fatsG = 100.0, proteinsG = 0.0, waterG = 0.0, sodiumMg = 2.0
+        ),
+        ItemEntity(
+            id = "ing_pomodori_pelati", name = "Pomodori pelati San Marzano", type = "RAW_INGREDIENT", defaultUnit = "g",
+            pricePerUnit = 2.00, priceUnit = "kg",
+            caloriesKcal = 22.0, carbohydratesG = 3.5, fatsG = 0.2, proteinsG = 1.2, waterG = 93.5, sodiumMg = 12.0
+        ),
+        ItemEntity(
+            id = "ing_mozzarella", name = "Mozzarella fiordilatte", type = "RAW_INGREDIENT", defaultUnit = "g",
+            pricePerUnit = 8.50, priceUnit = "kg", allergens = Allergen.LATTE.id,
+            caloriesKcal = 280.0, carbohydratesG = 2.2, fatsG = 22.0, proteinsG = 18.0, waterG = 55.0, sodiumMg = 400.0
+        ),
+        ItemEntity(
+            id = "ing_basilico", name = "Foglie di basilico fresco", type = "RAW_INGREDIENT", defaultUnit = "unità",
+            pricePerUnit = 0.05, priceUnit = "unità",
+            caloriesKcal = 23.0, carbohydratesG = 2.7, fatsG = 0.6, proteinsG = 3.2, waterG = 92.0, sodiumMg = 4.0
+        )
     )
 
     val DEFAULT_RECIPES: List<RecipeEntity> = listOf(
@@ -55,7 +127,8 @@ object PrepopulateData{
             isDefault = true,
             isFavorite = false,
             category = "Dolci",
-            createdAt = 1000000L
+            createdAt = 1000000L,
+            cookingWeightModifier = -8.0 // Calo dell'8% per evaporazione acqua a fuoco dolce
         ),
         RecipeEntity(
             id = ID_RECIPE_CORNETTO,
@@ -67,7 +140,8 @@ object PrepopulateData{
             isDefault = true,
             isFavorite = false,
             category = "Dolci",
-            createdAt = 2000000L
+            createdAt = 2000000L,
+            cookingWeightModifier = -12.0 // Calo del 12% in cottura in forno
         ),
         RecipeEntity(
             id = ID_RECIPE_PIZZA,
@@ -79,7 +153,8 @@ object PrepopulateData{
             isDefault = true,
             isFavorite = false,
             category = "Pizze",
-            createdAt = 3000000L
+            createdAt = 3000000L,
+            cookingWeightModifier = -10.0 // Calo del 10% in cottura forno pizza ad alta temperatura
         )
     )
 

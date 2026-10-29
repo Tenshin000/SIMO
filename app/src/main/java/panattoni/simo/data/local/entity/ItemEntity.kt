@@ -1,4 +1,4 @@
-﻿package panattoni.simo.data.local.entity
+package panattoni.simo.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.Index
@@ -22,7 +22,14 @@ data class ItemEntity(
     val gramsPerUnit: Double? = null,
     val pricePerUnit: Double? = null,
     val priceUnit: String? = null,
-    val allergens: String = ""
+    val allergens: String = "",
+    // Valori nutrizionali per 100g di ingrediente
+    val caloriesKcal: Double? = null,
+    val carbohydratesG: Double? = null,
+    val fatsG: Double? = null,
+    val proteinsG: Double? = null,
+    val waterG: Double? = null,
+    val sodiumMg: Double? = null
 ){
     fun toDomain(): Item = Item(
         id = id,
@@ -32,7 +39,13 @@ data class ItemEntity(
         gramsPerUnit = gramsPerUnit,
         pricePerUnit = pricePerUnit,
         priceUnit = priceUnit,
-        allergens = allergens
+        allergens = allergens,
+        caloriesKcal = caloriesKcal,
+        carbohydratesG = carbohydratesG,
+        fatsG = fatsG,
+        proteinsG = proteinsG,
+        waterG = waterG,
+        sodiumMg = sodiumMg
     )
 
     companion object{
@@ -44,7 +57,13 @@ data class ItemEntity(
             gramsPerUnit = item.gramsPerUnit,
             pricePerUnit = item.pricePerUnit,
             priceUnit = item.priceUnit,
-            allergens = item.allergens
+            allergens = item.allergens,
+            caloriesKcal = item.caloriesKcal,
+            carbohydratesG = item.carbohydratesG,
+            fatsG = item.fatsG,
+            proteinsG = item.proteinsG,
+            waterG = item.waterG,
+            sodiumMg = item.sodiumMg
         )
     }
 }

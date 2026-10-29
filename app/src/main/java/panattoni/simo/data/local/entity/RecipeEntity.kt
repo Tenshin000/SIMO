@@ -1,4 +1,4 @@
-﻿package panattoni.simo.data.local.entity
+package panattoni.simo.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.Index
@@ -25,7 +25,9 @@ data class RecipeEntity(
     val isDefault: Boolean = false,
     val isFavorite: Boolean = false,
     val category: String = "Altro",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    // Modificatore percentuale del peso in cottura (es. -15.0 per calo del 15%, +120.0 per resa pasta/riso)
+    val cookingWeightModifier: Double = 0.0
 ){
     fun toDomain(): Recipe = Recipe(
         id = id,
@@ -37,7 +39,8 @@ data class RecipeEntity(
         isDefault = isDefault,
         isFavorite = isFavorite,
         category = category,
-        createdAt = createdAt
+        createdAt = createdAt,
+        cookingWeightModifier = cookingWeightModifier
     )
 
     companion object{
@@ -51,7 +54,8 @@ data class RecipeEntity(
             isDefault = recipe.isDefault,
             isFavorite = recipe.isFavorite,
             category = recipe.category,
-            createdAt = recipe.createdAt
+            createdAt = recipe.createdAt,
+            cookingWeightModifier = recipe.cookingWeightModifier
         )
     }
 }

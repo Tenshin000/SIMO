@@ -11,7 +11,7 @@ enum class ItemType{
 }
 
 /**
- * Modello anagrafico di un ingrediente o sotto-ricetta con unità, costo e lista allergeni.
+ * Modello anagrafico di un ingrediente o sotto-ricetta con unità, costo, lista allergeni e valori nutrizionali.
  */
 data class Item(
     val id: String,
@@ -21,14 +21,21 @@ data class Item(
     val gramsPerUnit: Double? = null, // Per ingredienti discreti (es. 1 uovo = 50g)
     val pricePerUnit: Double? = null, // Costo unitario (es. 1.20 per €1.20)
     val priceUnit: String? = null, // Unità commerciale di costo (es. "kg", "l", "unità")
-    val allergens: String = "" // Stringa CSV con gli ID degli allergeni (es. "GLUTINE,LATTE")
+    val allergens: String = "", // Stringa CSV con gli ID degli allergeni (es. "GLUTINE,LATTE")
+    // Valori nutrizionali per 100g di ingrediente crudo/base
+    val caloriesKcal: Double? = null, // Calorie (kcal per 100g)
+    val carbohydratesG: Double? = null, // Carboidrati totali (g per 100g)
+    val fatsG: Double? = null, // Grassi totali (g per 100g)
+    val proteinsG: Double? = null, // Proteine totali (g per 100g)
+    val waterG: Double? = null, // Acqua/umidità (g per 100g)
+    val sodiumMg: Double? = null // Sodio (mg per 100g)
 ){
     val allergensList: List<Allergen>
         get() = Allergen.parseAllergensString(allergens)
 }
 
 /**
- * Modello principale della ricetta con metadati, resa base e testo delle istruzioni.
+ * Modello principale della ricetta con metadati, resa base, modificatore peso in cottura e istruzioni.
  */
 data class Recipe(
     val id: String,
@@ -40,7 +47,9 @@ data class Recipe(
     val isDefault: Boolean = false, // True se inserita con il pre-popolamento iniziale
     val isFavorite: Boolean = false,
     val category: String = "Altro",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    // Modificatore percentuale del peso in cottura (es. -15.0 per calo/evaporazione del 15%, +120.0 per idratazione pasta/riso)
+    val cookingWeightModifier: Double = 0.0
 )
 
 /**
