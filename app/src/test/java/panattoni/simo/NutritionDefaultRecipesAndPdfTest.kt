@@ -32,8 +32,8 @@ class NutritionDefaultRecipesAndPdfTest{
         assertEquals(-8.0, crema.cookingWeightModifier, 0.001)
         // Cornetto ha calo del 12% (-12.0) in cottura forno
         assertEquals(-12.0, cornetto.cookingWeightModifier, 0.001)
-        // Pizza ha calo del 10% (-10.0) in forno pizza ad alta temperatura
-        assertEquals(-10.0, pizza.cookingWeightModifier, 0.001)
+        // Pizza ha calo del 12% (-12.0) in forno pizza
+        assertEquals(-12.0, pizza.cookingWeightModifier, 0.001)
     }
 
     @Test
@@ -207,6 +207,73 @@ class NutritionDefaultRecipesAndPdfTest{
         assertTrue("Peso a porzione (singolo cornetto) compreso tra 80g e 140g", nutrition.weightPerPortionGrams in 80.0..140.0)
         // Calorie per singolo cornetto farcito alla crema
         assertTrue("Calorie singolo cornetto alla crema tra 250 e 450 kcal", nutrition.perPortion.caloriesKcal in 250.0..450.0)
+    }
+
+    @Test
+    fun testPizzaMargheritaRealisticWeight(){
+        val pizzaEntity = PrepopulateData.DEFAULT_RECIPES.first{ it.id == PrepopulateData.ID_RECIPE_PIZZA }
+        val itemsMap = PrepopulateData.DEFAULT_ITEMS.associateBy{ it.id }.mapValues{ (_, entity) ->
+            Item(
+                id = entity.id,
+                name = entity.name,
+                type = ItemType.valueOf(entity.type),
+                defaultUnit = entity.defaultUnit,
+                pricePerUnit = entity.pricePerUnit,
+                priceUnit = entity.priceUnit,
+                gramsPerUnit = entity.gramsPerUnit,
+                allergens = entity.allergens,
+                caloriesKcal = entity.caloriesKcal,
+                carbohydratesG = entity.carbohydratesG,
+                fatsG = entity.fatsG,
+                proteinsG = entity.proteinsG,
+                waterG = entity.waterG,
+                sodiumMg = entity.sodiumMg
+            )
+        }
+
+        val pizzaRecipe = Recipe(
+            id = pizzaEntity.id,
+            name = pizzaEntity.name,
+            description = pizzaEntity.description,
+            category = pizzaEntity.category,
+            baseYieldQuantity = pizzaEntity.baseYieldQuantity,
+            yieldUnit = pizzaEntity.yieldUnit,
+            instructions = pizzaEntity.instructions,
+            isDefault = true,
+            createdAt = pizzaEntity.createdAt,
+            cookingWeightModifier = pizzaEntity.cookingWeightModifier
+        )
+
+        val pizzaComponents = PrepopulateData.DEFAULT_COMPONENTS
+            .filter{ it.parentRecipeId == pizzaRecipe.id }
+            .map{ compEntity ->
+                val item = itemsMap[compEntity.childItemId]!!
+                RecipeComponentDetail(
+                    component = RecipeComponent(
+                        id = 0L,
+                        parentRecipeId = compEntity.parentRecipeId,
+                        childItemId = compEntity.childItemId,
+                        baseQuantity = compEntity.baseQuantity,
+                        unit = compEntity.unit,
+                        sortOrder = compEntity.sortOrder
+                    ),
+                    item = item
+                )
+            }
+
+        val tree = MathEngine.buildScaledTree(
+            recipeWithComponents = RecipeWithComponents(pizzaRecipe, pizzaComponents),
+            scalingFactor = 1.0,
+            allRecipesMap = emptyMap()
+        )
+
+        val nutrition = tree.nutrition
+        assertTrue("La pizza deve avere dati nutrizionali", nutrition.hasNutritionData)
+        // Peso crudo totale pizza: circa 455g (panetto ~275g + pomodoro 90g + mozzarella 90g)
+        assertTrue("Peso crudo totale realistico tra 430g e 480g (era ~800g)", nutrition.totalRawWeightGrams in 430.0..480.0)
+        // Peso cotto finito con calo cottura -12%: circa 400g
+        assertTrue("Peso cotto finito esattamente attorno a 400g", nutrition.totalCookedWeightGrams in 380.0..420.0)
+        assertTrue("Peso a porzione esattamente attorno a 400g", nutrition.weightPerPortionGrams in 380.0..420.0)
     }
 
     @Test

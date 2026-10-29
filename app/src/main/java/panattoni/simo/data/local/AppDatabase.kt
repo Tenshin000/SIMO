@@ -212,6 +212,26 @@ abstract class AppDatabase : RoomDatabase(){
                                 prefs.edit().putBoolean(KEY_MAINTENANCE_V14_DONE, true).apply()
                             } catch (_: Exception){}
                         }
+
+                        // Aggiornamento dosi realistiche per Pizza Margherita (~400g cotta)
+                        val keyPizzaRealisticDone = "db_maintenance_pizza_realistic_v14_fixed"
+                        if (!prefs.getBoolean(keyPizzaRealisticDone, false)){
+                            try{
+                                val pizzaId = PrepopulateData.ID_RECIPE_PIZZA
+                                db.execSQL("UPDATE recipe_components SET baseQuantity = 160.0 WHERE parentRecipeId = ? AND childItemId = 'ing_farina_0'", arrayOf(pizzaId))
+                                db.execSQL("UPDATE recipe_components SET baseQuantity = 105.0 WHERE parentRecipeId = ? AND childItemId = 'ing_acqua'", arrayOf(pizzaId))
+                                db.execSQL("UPDATE recipe_components SET baseQuantity = 2.0 WHERE parentRecipeId = ? AND childItemId = 'ing_lievito_birra'", arrayOf(pizzaId))
+                                db.execSQL("UPDATE recipe_components SET baseQuantity = 5.0 WHERE parentRecipeId = ? AND childItemId = 'ing_olio_evo'", arrayOf(pizzaId))
+                                db.execSQL("UPDATE recipe_components SET baseQuantity = 4.0 WHERE parentRecipeId = ? AND childItemId = 'ing_sale'", arrayOf(pizzaId))
+                                db.execSQL("UPDATE recipe_components SET baseQuantity = 90.0 WHERE parentRecipeId = ? AND childItemId = 'ing_pomodori_pelati'", arrayOf(pizzaId))
+                                db.execSQL("UPDATE recipe_components SET baseQuantity = 90.0 WHERE parentRecipeId = ? AND childItemId = 'ing_mozzarella'", arrayOf(pizzaId))
+                                db.execSQL("UPDATE recipes SET cookingWeightModifier = -12.0 WHERE id = ?", arrayOf(pizzaId))
+                                db.execSQL("UPDATE items SET gramsPerUnit = 1.0 WHERE id = 'ing_basilico'")
+                                db.execSQL("UPDATE items SET gramsPerUnit = 5.0 WHERE id = 'ing_scorza_limone'")
+                                db.execSQL("UPDATE items SET gramsPerUnit = 3.0 WHERE id = 'ing_vaniglia'")
+                                prefs.edit().putBoolean(keyPizzaRealisticDone, true).apply()
+                            } catch (_: Exception){}
+                        }
                         ensurePrepopulated(database, context)
                     }
                 }

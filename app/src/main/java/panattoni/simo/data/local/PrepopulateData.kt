@@ -39,12 +39,12 @@ object PrepopulateData{
         ),
         ItemEntity(
             id = "ing_scorza_limone", name = "Scorza di limone", type = "RAW_INGREDIENT", defaultUnit = "unità",
-            pricePerUnit = 0.50, priceUnit = "unità",
+            gramsPerUnit = 5.0, pricePerUnit = 0.50, priceUnit = "unità",
             caloriesKcal = 47.0, carbohydratesG = 16.0, fatsG = 0.3, proteinsG = 1.5, waterG = 81.6, sodiumMg = 6.0
         ),
         ItemEntity(
             id = "ing_vaniglia", name = "Baccello di vaniglia", type = "RAW_INGREDIENT", defaultUnit = "unità",
-            pricePerUnit = 2.00, priceUnit = "unità",
+            gramsPerUnit = 3.0, pricePerUnit = 2.00, priceUnit = "unità",
             caloriesKcal = 288.0, carbohydratesG = 12.6, fatsG = 0.1, proteinsG = 0.1, waterG = 52.6, sodiumMg = 9.0
         ),
 
@@ -111,7 +111,7 @@ object PrepopulateData{
         ),
         ItemEntity(
             id = "ing_basilico", name = "Foglie di basilico fresco", type = "RAW_INGREDIENT", defaultUnit = "unità",
-            pricePerUnit = 0.05, priceUnit = "unità",
+            gramsPerUnit = 1.0, pricePerUnit = 0.05, priceUnit = "unità",
             caloriesKcal = 23.0, carbohydratesG = 2.7, fatsG = 0.6, proteinsG = 3.2, waterG = 92.0, sodiumMg = 4.0
         )
     )
@@ -154,7 +154,7 @@ object PrepopulateData{
             isFavorite = false,
             category = "Pizze",
             createdAt = 3000000L,
-            cookingWeightModifier = -10.0 // Calo del 10% in cottura forno pizza ad alta temperatura
+            cookingWeightModifier = -12.0 // Calo del 12% in cottura (evaporazione acqua impasto e condimenti)
         )
     )
 
@@ -179,14 +179,14 @@ object PrepopulateData{
         // SOTTO-RICETTA Crema Pasticcera (330g per 10 cornetti)
         RecipeComponentEntity(parentRecipeId = ID_RECIPE_CORNETTO, childItemId = ID_RECIPE_CREMA, baseQuantity = 330.0, unit = "g", sortOrder = 9),
 
-        // Componenti Pizza Margherita (Dosi base per 1 singola pizza)
-        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_farina_0", baseQuantity = 250.0, unit = "g", sortOrder = 1),
-        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_acqua", baseQuantity = 175.0, unit = "ml", sortOrder = 2),
-        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_lievito_birra", baseQuantity = 5.0, unit = "g", sortOrder = 3),
-        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_olio_evo", baseQuantity = 10.0, unit = "ml", sortOrder = 4),
-        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_sale", baseQuantity = 5.0, unit = "g", sortOrder = 5),
-        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_pomodori_pelati", baseQuantity = 200.0, unit = "g", sortOrder = 6),
-        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_mozzarella", baseQuantity = 150.0, unit = "g", sortOrder = 7),
+        // Componenti Pizza Margherita (Dosi realistiche per 1 singola pizza al piatto da ~400g cotta)
+        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_farina_0", baseQuantity = 160.0, unit = "g", sortOrder = 1),
+        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_acqua", baseQuantity = 105.0, unit = "ml", sortOrder = 2),
+        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_lievito_birra", baseQuantity = 2.0, unit = "g", sortOrder = 3),
+        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_olio_evo", baseQuantity = 5.0, unit = "ml", sortOrder = 4),
+        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_sale", baseQuantity = 4.0, unit = "g", sortOrder = 5),
+        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_pomodori_pelati", baseQuantity = 90.0, unit = "g", sortOrder = 6),
+        RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_mozzarella", baseQuantity = 90.0, unit = "g", sortOrder = 7),
         RecipeComponentEntity(parentRecipeId = ID_RECIPE_PIZZA, childItemId = "ing_basilico", baseQuantity = 3.0, unit = "unità", sortOrder = 8)
     )
 }
