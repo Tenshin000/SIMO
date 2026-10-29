@@ -1,6 +1,9 @@
-﻿package panattoni.simo.domain
+package panattoni.simo.domain
 
+import panattoni.simo.data.model.Item
 import panattoni.simo.data.model.ItemType
+import panattoni.simo.data.model.NutritionalValues
+import panattoni.simo.data.model.RecipeNutritionSummary
 import panattoni.simo.data.model.RecipeWithComponents
 import panattoni.simo.data.model.ScaledComponent
 import panattoni.simo.data.model.ScaledRecipeTree
@@ -109,8 +112,52 @@ object MathEngine{
     }
 
     /**
+     * Converte una quantità in grammi in base all'unità di misura specificata.
+     * Supporta tutte le unità di misura dell'app (g, kg, ml, l, unità, pz, cucchiai, cucchiaini, pizzichi, q.b.).
+     */
+    fun convertToGrams(quantity: Double, unit: String, gramsPerUnit: Double? = null): Double{
+        if (!quantity.isFinite() || quantity <= 0.0) return 0.0
+        if (MeasurementUnit.isQb(unit)) return 0.0
+
+        val u = unit.trim().lowercase()
+        return when{
+            u in setOf("g", "grammi", "grammo") -> quantity
+            u in setOf("kg", "chilogrammi", "chilogrammo", "chili", "chilo") -> quantity * 1000.0
+            u in setOf("ml", "millilitri", "millilitro") -> quantity // Densità standard 1.0 g/ml per liquidi alimentari
+            u in setOf("l", "litri", "litro") -> quantity * 1000.0
+            u in setOf("cucchiaio", "cucchiai") -> quantity * 15.0 // Peso medio standard 1 cucchiaio
+            u in setOf("cucchiaino", "cucchiaini") -> quantity * 5.0 // Peso medio standard 1 cucchiaino
+            u in setOf("pizzico", "pizzichi") -> quantity * 1.0 // Peso medio standard 1 pizzico
+            gramsPerUnit != null && gramsPerUnit > 0.0 -> quantity * gramsPerUnit
+            u in DISCRETE_CODES -> quantity * 50.0 // Default prudenziale per unità intera non calibrata
+            else -> quantity // Fallback 1:1
+        }
+    }
+
+    /**
+     * Calcola il peso in grammi e i 6 valori nutrizionali per una determinata quantità di ingrediente
+     * partendo dai suoi valori nutrizionali di riferimento per 100g.
+     */
+    fun calculateIngredientNutrients(item: Item, quantity: Double, unit: String): Pair<Double, NutritionalValues>{
+        val grams = convertToGrams(quantity, unit, item.gramsPerUnit)
+        if (grams <= 0.0) return Pair(0.0, NutritionalValues())
+
+        val factor = grams / 100.0
+        val nutrients = NutritionalValues(
+            caloriesKcal = (item.caloriesKcal ?: 0.0) * factor,
+            carbohydratesG = (item.carbohydratesG ?: 0.0) * factor,
+            fatsG = (item.fatsG ?: 0.0) * factor,
+            proteinsG = (item.proteinsG ?: 0.0) * factor,
+            waterG = (item.waterG ?: 0.0) * factor,
+            sodiumMg = (item.sodiumMg ?: 0.0) * factor
+        )
+        return Pair(grams, nutrients)
+    }
+
+    /**
      * Costruisce ricorsivamente l'albero delle dosi scalate della ricetta e di tutte le sotto-ricette annidate,
-     * calcolando anche il Food Cost in tempo reale (costo componente, costo totale impasto e costo porzione).
+     * calcolando anche il Food Cost in tempo reale (costo componente, costo totale impasto e costo porzione)
+     * e il profilo nutrizionale completo (totale, per 100g e a porzione) con modificatore di peso in cottura.
      *
      * @param recipeWithComponents la ricetta genitore con i suoi componenti
      * @param scalingFactor il moltiplicatore k
@@ -133,6 +180,9 @@ object MathEngine{
 
         var hasAnyCost = false
         var accumulatedCost = 0.0
+        var accumulatedRawWeight = 0.0
+        var accumulatedNutrients = NutritionalValues()
+        var hasAnyNutrition = false
 
         val scaledComponents = recipeWithComponents.components.map{ detail ->
             val comp = detail.component
@@ -142,6 +192,8 @@ object MathEngine{
 
             var subTree: ScaledRecipeTree? = null
             var componentCost: Double? = null
+            var compRawWeight = 0.0
+            var compNutrients = NutritionalValues()
 
             if (detail.item.type == ItemType.RECIPE && currentDepth < MAX_RECURSION_DEPTH){
                 val subRecipeWithComps = allRecipesMap[detail.item.id]
@@ -164,6 +216,20 @@ object MathEngine{
                     if (calculatedSubTree.hasCostData){
                         componentCost = calculatedSubTree.totalCost
                     }
+
+                    // Se la sotto-ricetta ha dati nutrizionali calcolati ricorsivamente:
+                    if (calculatedSubTree.nutrition.hasNutritionData){
+                        val fraction = if (calculatedSubTree.targetYieldQuantity > 0.0){
+                            scaledQuantity / calculatedSubTree.targetYieldQuantity
+                        } else 1.0
+                        compNutrients = calculatedSubTree.nutrition.totalNutrients * fraction
+                        // Il peso della sotto-ricetta che entra nella ricetta padre è il suo peso cotto finito proporzionale
+                        compRawWeight = if (calculatedSubTree.nutrition.totalCookedWeightGrams > 0.0){
+                            calculatedSubTree.nutrition.totalCookedWeightGrams * fraction
+                        } else {
+                            convertToGrams(scaledQuantity, comp.unit, detail.item.gramsPerUnit)
+                        }
+                    }
                 }
             }
 
@@ -182,21 +248,98 @@ object MathEngine{
                 } else null
             }
 
+            // Se i valori nutrizionali non provengono da una sotto-ricetta ricorsiva, calcolali dall'Item
+            if (!compNutrients.hasValues){
+                val (g, n) = calculateIngredientNutrients(detail.item, scaledQuantity, comp.unit)
+                compRawWeight = g
+                compNutrients = n
+            }
+
             if (componentCost != null && componentCost > 0.0){
                 hasAnyCost = true
                 accumulatedCost += componentCost
             }
+
+            if (compNutrients.hasValues){
+                hasAnyNutrition = true
+            }
+
+            accumulatedRawWeight += compRawWeight
+            accumulatedNutrients = accumulatedNutrients + compNutrients
 
             ScaledComponent(
                 componentDetail = detail,
                 scaledQuantity = scaledQuantity,
                 formattedScaledQuantity = formatted,
                 subRecipeTree = subTree,
-                componentCost = componentCost
+                componentCost = componentCost,
+                rawWeightGrams = compRawWeight,
+                nutrients = compNutrients
             )
         }
 
         val costPerPortion = if (targetYield > 0.0) accumulatedCost / targetYield else 0.0
+
+        // --- Calcolo Nutrizionale con Modificatore Peso Cottura (Yield Loss / Gain) ---
+        val cookingModifier = recipe.cookingWeightModifier
+        // Moltiplicatore di resa ponderale in cottura (es. -15% -> 0.85; +120% -> 2.20; protetto contro valori <= 0)
+        val cookingMultiplier = (1.0 + (cookingModifier / 100.0)).coerceAtLeast(0.01)
+        val totalCookedWeightGrams = accumulatedRawWeight * cookingMultiplier
+
+        // Adattamento dell'acqua nei nutrienti totali cotti:
+        val cookedNutrients = when{
+            cookingModifier < 0.0 -> {
+                // Calo peso: perdita di vapore acqueo per evaporazione
+                val waterLost = accumulatedRawWeight - totalCookedWeightGrams
+                val remainingWater = (accumulatedNutrients.waterG - waterLost).coerceAtLeast(0.0)
+                accumulatedNutrients.copy(waterG = remainingWater)
+            }
+            cookingModifier > 0.0 -> {
+                // Aumento peso: assorbimento d'acqua in cottura (es. pasta o riso)
+                val waterGained = totalCookedWeightGrams - accumulatedRawWeight
+                val totalWater = accumulatedNutrients.waterG + waterGained
+                accumulatedNutrients.copy(waterG = totalWater)
+            }
+            else -> accumulatedNutrients
+        }
+
+        // Calcolo per 100g di prodotto finito (concentrazione dei nutrienti post-cottura, a norma Reg. UE 1169/2011)
+        val per100g = if (totalCookedWeightGrams > 0.0){
+            val factor100 = 100.0 / totalCookedWeightGrams
+            cookedNutrients * factor100
+        } else{
+            NutritionalValues()
+        }
+
+        // Calcolo per porzione e peso della singola porzione
+        val isWeightYield = recipe.yieldUnit.trim().lowercase() in setOf("g", "kg", "grammi", "grammo", "chilogrammi", "chilo")
+        val (perPortion, weightPerPortionGrams) = if (targetYield > 0.0){
+            if (isWeightYield){
+                // Se la resa base è espressa in grammi o kg, la porzione nutrizionale di riferimento standard è 100g
+                Pair(per100g, 100.0)
+            } else{
+                // Resa a pezzi o porzioni (es. 10 cornetti, 4 porzioni): dividi per il numero totale di porzioni prodotte
+                val portionFactor = 1.0 / targetYield
+                val nutPortion = cookedNutrients * portionFactor
+                val portionWeight = totalCookedWeightGrams / targetYield
+                Pair(nutPortion, portionWeight)
+            }
+        } else{
+            Pair(NutritionalValues(), 0.0)
+        }
+
+        val nutritionSummary = RecipeNutritionSummary(
+            totalRawWeightGrams = accumulatedRawWeight,
+            totalCookedWeightGrams = totalCookedWeightGrams,
+            cookingWeightModifier = cookingModifier,
+            totalNutrients = cookedNutrients,
+            per100g = per100g,
+            perPortion = perPortion,
+            weightPerPortionGrams = weightPerPortionGrams,
+            portionUnit = recipe.yieldUnit,
+            targetYieldQuantity = targetYield,
+            hasNutritionData = hasAnyNutrition
+        )
 
         val allCollectedAllergens = mutableSetOf<Allergen>()
         for (comp in scaledComponents){
@@ -216,7 +359,8 @@ object MathEngine{
             totalCost = accumulatedCost,
             costPerPortion = costPerPortion,
             hasCostData = hasAnyCost,
-            allergens = sortedAllergens
+            allergens = sortedAllergens,
+            nutrition = nutritionSummary
         )
     }
 
