@@ -134,19 +134,28 @@ object RecipePdfExporter{
             drawIngredientsTable()
             drawAllergensBox()
             drawNutritionDeclarationBox()
+
+            // Il PDF ha sempre almeno 2 pagine: la pagina 1 è dedicata a presentazione, ingredienti,
+            // food cost, allergeni e nutrizione; la pagina 2 ospita il procedimento di preparazione
+            startNewPage()
             drawInstructions()
+
             finishCurrentPage()
+        }
+
+        private fun startNewPage(){
+            drawFooter()
+            document.finishPage(currentPage)
+            pageNumber++
+            currentPage = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
+            canvas = currentPage.canvas
+            currentY = MARGIN
+            drawMiniPageHeader()
         }
 
         private fun ensureSpace(neededHeight: Float){
             if (currentY + neededHeight > PAGE_HEIGHT - 35f){
-                drawFooter()
-                document.finishPage(currentPage)
-                pageNumber++
-                currentPage = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
-                canvas = currentPage.canvas
-                currentY = MARGIN
-                drawMiniPageHeader()
+                startNewPage()
             }
         }
 
@@ -154,6 +163,8 @@ object RecipePdfExporter{
             paint.color = primaryDark
             paint.textSize = 10f
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            paint.style = Paint.Style.FILL
+            paint.textAlign = Paint.Align.LEFT
             canvas.drawText("SIMO • ${tree.recipe.name}", MARGIN, currentY + 10f, paint)
 
             paint.color = subtleText
@@ -164,8 +175,14 @@ object RecipePdfExporter{
             paint.textAlign = Paint.Align.LEFT
 
             paint.color = dividerColor
+            paint.style = Paint.Style.STROKE
             paint.strokeWidth = 0.8f
             canvas.drawLine(MARGIN, currentY + 16f, MARGIN + CONTENT_WIDTH, currentY + 16f, paint)
+
+            // Ripristina paint in stile FILL e colore nero ben visibile per i testi successivi
+            paint.style = Paint.Style.FILL
+            paint.strokeWidth = 1f
+            paint.color = Color.BLACK
             currentY += 28f
         }
 
@@ -435,27 +452,47 @@ object RecipePdfExporter{
         }
 
         private fun drawInstructions(){
-            if (tree.recipe.instructions.isBlank()) return
-
+            // Titolo sezione del procedimento di preparazione
             ensureSpace(50f)
+            paint.style = Paint.Style.FILL
             paint.color = primaryDark
             paint.textSize = 12f
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             canvas.drawText("PROCEDIMENTO DI PREPARAZIONE", MARGIN, currentY + 12f, paint)
-            currentY += 20f
+            currentY += 22f
+
+            // Nel caso in cui non ci siano passaggi inseriti, mostriamo un testo indicativo
+            // garantendo comunque la presenza pulita della seconda pagina
+            if (tree.recipe.instructions.isBlank()){
+                paint.color = subtleText
+                paint.textSize = 9.5f
+                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
+                canvas.drawText("Nessun procedimento di preparazione inserito per questa ricetta.", MARGIN + 6f, currentY + 11f, paint)
+                currentY += 20f
+                return
+            }
 
             val lines = tree.recipe.instructions.lines().map{ it.trim() }.filter{ it.isNotEmpty() }
-            paint.color = textColor
-            paint.textSize = 9.5f
             for ((index, step) in lines.withIndex()){
                 val cleanStep = if (step.matches(Regex("""^\d+[.)\-].*"""))) step else "${index + 1}. $step"
-                val wrapped = wrapText(cleanStep, CONTENT_WIDTH - 10f, paint)
+
+                paint.color = Color.BLACK
+                paint.style = Paint.Style.FILL
+                paint.textSize = 9.5f
+                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+
+                val wrapped = wrapText(cleanStep, CONTENT_WIDTH - 12f, paint)
                 for (wLine in wrapped){
-                    ensureSpace(16f)
+                    ensureSpace(18f)
+                    // Disegna ogni riga dei passaggi con colore nero pieno ben visibile e nitido
+                    paint.color = Color.BLACK
+                    paint.style = Paint.Style.FILL
+                    paint.textSize = 9.5f
+                    paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
                     canvas.drawText(wLine, MARGIN + 6f, currentY + 11f, paint)
-                    currentY += 14f
+                    currentY += 15f
                 }
-                currentY += 4f
+                currentY += 5f
             }
         }
 
