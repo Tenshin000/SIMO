@@ -173,7 +173,7 @@ class GeminiRecipeService{
                {
                   "recipeName": "$recipeName",
                   "description": "Breve descrizione professionale accattivante",
-                  "category": "Una tra Dolci, Pizze, Panetteria, Antipasti, Primi, Secondi, Contorni, Zuppe, Alcolici, Analcolici, Caffetteria, Altro",
+                  "category": "Una tra Dolci, Pizze, Panetteria, Panini, Antipasti, Primi, Secondi, Contorni, Zuppe, Alcolici, Analcolici, Caffetteria, Altro",
                   "baseYield": 4.0,
                   "yieldUnit": "porzioni" o "cornetti" o "pizze" o "g",
                   "cookingWeightModifier": -10.0,

@@ -1,11 +1,13 @@
-﻿package panattoni.simo.domain
+package panattoni.simo.domain
 
 object RecipeTags{
 
+    // Categorie predefinite dell'applicazione per le ricette
     val DEFAULT_TAGS = listOf(
         "Dolci",
         "Pizze",
         "Panetteria",
+        "Panini",
         "Antipasti",
         "Primi",
         "Secondi",

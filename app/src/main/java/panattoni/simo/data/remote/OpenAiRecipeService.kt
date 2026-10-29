@@ -152,7 +152,7 @@ class OpenAiRecipeService{
                 Devi compilare:
                 - 'name': nome formale della ricetta
                 - 'description': breve descrizione invitante (1-2 frasi)
-                - 'category': categoria appropriata (es. Primi, Secondi, Dolci, Lievitati, Pasticceria, Bevande, Antipasti)
+                - 'category': categoria appropriata (es. Primi, Secondi, Dolci, Lievitati, Panini, Pasticceria, Bevande, Antipasti)
                 - 'baseYield': numero resa (es. 4.0 o 10.0)
                 - 'yieldUnit': "porzioni" o "cornetti" o "pizze" o "panini" o "g"
                 - 'ingredients': lista di tutti gli ingredienti con 'name', 'quantity' (numero), 'unit' (es. g, ml, pz, unità, cucchiaio, q.b.), 'pricePerUnit' (costo unitario di mercato), 'priceUnit' (kg, l, pz o unità), 'allergens' (array con ID degli allergeni UE)
