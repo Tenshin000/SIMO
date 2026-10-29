@@ -178,7 +178,7 @@ fun RecipeEditScreen(
                             ){
                                 Text("✨", fontSize = 16.sp)
                                 Text(
-                                    text = "Elaborazione Gemini AI in corso...",
+                                    text = "Elaborazione Assistente AI in corso...",
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF4A148C),
                                     fontSize = 14.sp
@@ -375,8 +375,12 @@ fun RecipeEditScreen(
                 }
             }
 
-            // Assistente AI Gemini (100% Gratuito tramite Google AI Studio)
+            // Assistente AI (Google Gemini & ChatGPT OpenAI)
             item{
+                val activeProvider = viewModel.getPreferredAiProvider()
+                val providerLabel = if (activeProvider == panattoni.simo.data.remote.AiProvider.OPENAI) "ChatGPT" else "Gemini"
+                val hasAnyKey = viewModel.getGeminiApiKey().isNotBlank() || viewModel.getOpenAiApiKey().isNotBlank()
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
@@ -398,16 +402,28 @@ fun RecipeEditScreen(
                                 Text("✨", fontSize = 18.sp)
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Assistente AI Gemini",
+                                    text = "Assistente AI",
                                     color = Color(0xFF6A1B9A),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp
                                 )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Surface(
+                                    color = Color(0xFF8E24AA).copy(alpha = 0.12f),
+                                    shape = RoundedCornerShape(6.dp)
+                                ){
+                                    Text(
+                                        text = providerLabel,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF6A1B9A)
+                                    )
+                                }
                             }
                             TextButton(onClick ={ showApiKeyDialog = true }){
-                                val hasKey = viewModel.getGeminiApiKey().isNotBlank()
                                 Text(
-                                    text = if (hasKey) "⚙️ Impostazioni" else "🔑 Configura API",
+                                    text = if (hasAnyKey) "⚙️ Impostazioni" else "🔑 Configura API",
                                     fontSize = 12.sp,
                                     color = Color(0xFF6A1B9A),
                                     fontWeight = FontWeight.Bold
@@ -416,7 +432,7 @@ fun RecipeEditScreen(
                         }
 
                         Text(
-                            text = "Compila in automatico pesi e dosi bilanciate, costi di mercato, 14 allergeni ufficiali UE e passaggi numerati con l'AI gratuita.",
+                            text = "Compila in automatico pesi e dosi bilanciate, costi di mercato, 14 allergeni ufficiali UE e passaggi numerati con l'Intelligenza Artificiale.",
                             color = Color(0xFF4A148C),
                             fontSize = 12.sp,
                             lineHeight = 16.sp
@@ -429,7 +445,7 @@ fun RecipeEditScreen(
                             enabled = !uiState.isAiLoading,
                             modifier = Modifier.fillMaxWidth()
                         ){
-                            Text("🪄 Apri Assistente Gemini", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("🪄 Apri Assistente AI", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -806,7 +822,7 @@ fun RecipeEditScreen(
                             )
                             if (uiState.components.isNotEmpty()){
                                 TextButton(
-                                    onClick ={ viewModel.generateInstructionsWithGemini() },
+                                    onClick ={ viewModel.generateInstructionsWithAi() },
                                     enabled = !uiState.isAiLoading
                                 ){
                                     Text("✨ Genera con AI", color = MacaronPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
