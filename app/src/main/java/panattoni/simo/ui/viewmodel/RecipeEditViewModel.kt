@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import panattoni.simo.data.remote.GeminiIngredient
 import panattoni.simo.data.remote.GeminiRecipeService
+import panattoni.simo.data.remote.AiProvider
+import panattoni.simo.data.remote.OpenAiModel
+import panattoni.simo.data.remote.OpenAiRecipeService
 import panattoni.simo.domain.Allergen
 import panattoni.simo.domain.RecipeTags
 import java.util.UUID
@@ -532,30 +535,50 @@ class RecipeEditViewModel(
         }
     }
 
-    // --- Gemini AI Assistant Integration ---
+    // --- Gestione Provider AI (Gemini & OpenAI ChatGPT) ---
 
     private val geminiService = GeminiRecipeService()
+    private val openAiService = OpenAiRecipeService()
     private val prefs = getApplication<Application>().getSharedPreferences("simo_prefs", android.content.Context.MODE_PRIVATE)
 
-    fun getGeminiApiKey(): String {
-        // 1. Prova a leggere la chiave crittografata con KeyStore hardware AES-256 GCM
+    /**
+     * Ritorna il provider AI preferito dall'utente (Google Gemini o OpenAI ChatGPT).
+     */
+    fun getPreferredAiProvider(): AiProvider{
+        val id = prefs.getString("ai_preferred_provider", AiProvider.DEFAULT.id)
+        return AiProvider.fromId(id)
+    }
+
+    /**
+     * Salva il provider AI preferito.
+     */
+    fun savePreferredAiProvider(provider: AiProvider){
+        prefs.edit().putString("ai_preferred_provider", provider.id).apply()
+    }
+
+    /**
+     * Recupera la chiave API di Gemini decifrandola tramite Android KeyStore hardware (AES-256 GCM).
+     */
+    fun getGeminiApiKey(): String{
         val encrypted = prefs.getString("gemini_api_key_enc", null)
         if (!encrypted.isNullOrBlank()){
             val decrypted = panattoni.simo.util.CryptoUtils.decrypt(encrypted)
             if (decrypted.isNotBlank()) return decrypted
         }
 
-        // 2. Retrocompatibilità e Migrazione: se esiste una chiave memorizzata in chiaro, cifrala e rimuovi quella in chiaro
+        // Retrocompatibilità con vecchie installazioni
         val legacyPlainKey = prefs.getString("gemini_api_key", null)?.trim()
         if (!legacyPlainKey.isNullOrBlank()){
             saveGeminiApiKey(legacyPlainKey)
             prefs.edit().remove("gemini_api_key").apply()
             return legacyPlainKey
         }
-
         return ""
     }
 
+    /**
+     * Cifra la chiave API di Gemini e la salva in modo sicuro.
+     */
     fun saveGeminiApiKey(key: String){
         val trimmed = key.trim()
         if (trimmed.isBlank()){
@@ -563,7 +586,7 @@ class RecipeEditViewModel(
                 .remove("gemini_api_key_enc")
                 .remove("gemini_api_key")
                 .apply()
-        } else {
+        } else{
             val encrypted = panattoni.simo.util.CryptoUtils.encrypt(trimmed)
             prefs.edit()
                 .putString("gemini_api_key_enc", encrypted)
@@ -578,6 +601,69 @@ class RecipeEditViewModel(
 
     fun saveGeminiPreferredModel(modelId: String){
         prefs.edit().putString("gemini_preferred_model", modelId.trim()).apply()
+    }
+
+    /**
+     * Recupera la chiave API di OpenAI (ChatGPT) decifrandola con Android KeyStore hardware (AES-256 GCM).
+     */
+    fun getOpenAiApiKey(): String{
+        val encrypted = prefs.getString("openai_api_key_enc", null)
+        if (!encrypted.isNullOrBlank()){
+            val decrypted = panattoni.simo.util.CryptoUtils.decrypt(encrypted)
+            if (decrypted.isNotBlank()) return decrypted
+        }
+
+        val legacyPlainKey = prefs.getString("openai_api_key", null)?.trim()
+        if (!legacyPlainKey.isNullOrBlank()){
+            saveOpenAiApiKey(legacyPlainKey)
+            prefs.edit().remove("openai_api_key").apply()
+            return legacyPlainKey
+        }
+        return ""
+    }
+
+    /**
+     * Cifra la chiave API di OpenAI e la salva in modo sicuro.
+     */
+    fun saveOpenAiApiKey(key: String){
+        val trimmed = key.trim()
+        if (trimmed.isBlank()){
+            prefs.edit()
+                .remove("openai_api_key_enc")
+                .remove("openai_api_key")
+                .apply()
+        } else{
+            val encrypted = panattoni.simo.util.CryptoUtils.encrypt(trimmed)
+            prefs.edit()
+                .putString("openai_api_key_enc", encrypted)
+                .remove("openai_api_key")
+                .apply()
+        }
+    }
+
+    fun getOpenAiPreferredModel(): String =
+        prefs.getString("openai_preferred_model", panattoni.simo.data.remote.OpenAiModel.DEFAULT.modelId)
+            ?: panattoni.simo.data.remote.OpenAiModel.DEFAULT.modelId
+
+    fun saveOpenAiPreferredModel(modelId: String){
+        prefs.edit().putString("openai_preferred_model", modelId.trim()).apply()
+    }
+
+    /**
+     * Salva simultaneamente tutte le impostazioni AI (Provider, chiavi cifrate e modelli selezionati).
+     */
+    fun saveAiSettings(
+        provider: AiProvider,
+        geminiKey: String,
+        geminiModelId: String,
+        openAiKey: String,
+        openAiModelId: String
+    ){
+        savePreferredAiProvider(provider)
+        saveGeminiApiKey(geminiKey)
+        saveGeminiPreferredModel(geminiModelId)
+        saveOpenAiApiKey(openAiKey)
+        saveOpenAiPreferredModel(openAiModelId)
     }
 
     fun saveGeminiSettings(apiKey: String, modelId: String){
@@ -657,35 +743,92 @@ class RecipeEditViewModel(
         )
     }
 
-    fun generateRecipeWithGemini(userCustomPrompt: String? = null, onComplete: () -> Unit = {}){
+    /**
+     * Genera una ricetta completa invocando il provider AI selezionato (Gemini o ChatGPT),
+     * con fallback automatico all'altro provider in caso di esaurimento quota o errore transitorio.
+     */
+    fun generateRecipeWithAi(userCustomPrompt: String? = null, onComplete: () -> Unit = {}){
         val state = _uiState.value
         if (state.name.isBlank()){
-            _uiState.value = state.copy(errorMessage = "Inserisci prima il nome della ricetta per consentire a Gemini di elaborarla.")
+            _uiState.value = state.copy(errorMessage = "Inserisci prima il nome della ricetta per consentire all'AI di elaborarla.")
             return
         }
 
-        val apiKey = getGeminiApiKey()
-        if (apiKey.isBlank()){
+        val preferredProvider = getPreferredAiProvider()
+        val geminiKey = getGeminiApiKey()
+        val openAiKey = getOpenAiApiKey()
+
+        val primaryKey = if (preferredProvider == AiProvider.OPENAI) openAiKey else geminiKey
+        val secondaryKey = if (preferredProvider == AiProvider.OPENAI) geminiKey else openAiKey
+
+        if (primaryKey.isBlank() && secondaryKey.isBlank()){
             _uiState.value = state.copy(errorMessage = "API_KEY_REQUIRED")
             return
         }
 
         _uiState.value = state.copy(isAiLoading = true, errorMessage = null, infoMessage = null)
 
-        val preferredModel = getGeminiPreferredModel()
-        viewModelScope.launch {
-            val result = geminiService.generateFullRecipe(
-                apiKey = apiKey,
-                recipeName = state.name,
-                description = state.description.takeIf { it.isNotBlank() },
-                category = state.category,
-                baseYield = state.baseYield,
-                yieldUnit = state.yieldUnit,
-                userCustomPrompt = userCustomPrompt,
-                preferredModel = preferredModel
-            )
+        viewModelScope.launch{
+            val useOpenAiPrimary = (preferredProvider == AiProvider.OPENAI && openAiKey.isNotBlank()) || geminiKey.isBlank()
 
-            result.onSuccess { response ->
+            val primaryResult = if (useOpenAiPrimary){
+                openAiService.generateRecipe(
+                    apiKey = openAiKey,
+                    recipeName = state.name,
+                    baseYield = state.baseYield,
+                    yieldUnit = state.yieldUnit,
+                    customPrompt = userCustomPrompt,
+                    preferredModel = getOpenAiPreferredModel()
+                )
+            } else{
+                geminiService.generateFullRecipe(
+                    apiKey = geminiKey,
+                    recipeName = state.name,
+                    description = state.description.takeIf{ it.isNotBlank() },
+                    category = state.category,
+                    baseYield = state.baseYield,
+                    yieldUnit = state.yieldUnit,
+                    userCustomPrompt = userCustomPrompt,
+                    preferredModel = getGeminiPreferredModel()
+                )
+            }
+
+            var finalResult = primaryResult
+            var providerUsed = if (useOpenAiPrimary) "ChatGPT (${getOpenAiPreferredModel()})" else "Gemini (${getGeminiPreferredModel()})"
+
+            // Fallback automatico al provider secondario se il primario ha fallito ed è presente l'altra chiave
+            if (primaryResult.isFailure){
+                val canFallback = if (useOpenAiPrimary) geminiKey.isNotBlank() else openAiKey.isNotBlank()
+                if (canFallback){
+                    val fallbackResult = if (useOpenAiPrimary){
+                        geminiService.generateFullRecipe(
+                            apiKey = geminiKey,
+                            recipeName = state.name,
+                            description = state.description.takeIf{ it.isNotBlank() },
+                            category = state.category,
+                            baseYield = state.baseYield,
+                            yieldUnit = state.yieldUnit,
+                            userCustomPrompt = userCustomPrompt,
+                            preferredModel = getGeminiPreferredModel()
+                        )
+                    } else{
+                        openAiService.generateRecipe(
+                            apiKey = openAiKey,
+                            recipeName = state.name,
+                            baseYield = state.baseYield,
+                            yieldUnit = state.yieldUnit,
+                            customPrompt = userCustomPrompt,
+                            preferredModel = getOpenAiPreferredModel()
+                        )
+                    }
+                    if (fallbackResult.isSuccess){
+                        finalResult = fallbackResult
+                        providerUsed = if (useOpenAiPrimary) "Gemini (fallback automatico)" else "ChatGPT (fallback automatico)"
+                    }
+                }
+            }
+
+            finalResult.onSuccess{ response ->
                 applyGeminiIngredients(response.ingredients, clearExisting = true)
 
                 val newDesc = if (state.description.isBlank()) response.description ?: state.description else state.description
@@ -710,36 +853,44 @@ class RecipeEditViewModel(
                     yieldUnit = newYieldUnit,
                     instructions = newInstructions,
                     isAiLoading = false,
-                    infoMessage = "✨ Ricetta, dosi, costi, allergeni e passaggi generati con successo da Gemini!"
+                    infoMessage = "✨ Ricetta, dosi, costi, allergeni e passaggi generati con successo da $providerUsed!"
                 )
                 onComplete()
-            }.onFailure { err ->
+            }.onFailure{ err ->
                 _uiState.value = _uiState.value.copy(
                     isAiLoading = false,
-                    errorMessage = "Errore Gemini: ${err.message}"
+                    errorMessage = "Errore AI ($providerUsed): ${err.message}"
                 )
             }
         }
     }
 
-    fun completeMissingWithGemini(userCustomPrompt: String? = null, onComplete: () -> Unit = {}){
+    /**
+     * Completa ingredienti mancanti o senza dose bilanciandoli con l'AI.
+     */
+    fun completeMissingWithAi(userCustomPrompt: String? = null, onComplete: () -> Unit = {}){
         val state = _uiState.value
         if (state.name.isBlank()){
             _uiState.value = state.copy(errorMessage = "Inserisci prima il nome della ricetta.")
             return
         }
 
-        val apiKey = getGeminiApiKey()
-        if (apiKey.isBlank()){
+        val preferredProvider = getPreferredAiProvider()
+        val geminiKey = getGeminiApiKey()
+        val openAiKey = getOpenAiApiKey()
+
+        val primaryKey = if (preferredProvider == AiProvider.OPENAI) openAiKey else geminiKey
+        val secondaryKey = if (preferredProvider == AiProvider.OPENAI) geminiKey else openAiKey
+
+        if (primaryKey.isBlank() && secondaryKey.isBlank()){
             _uiState.value = state.copy(errorMessage = "API_KEY_REQUIRED")
             return
         }
 
         _uiState.value = state.copy(isAiLoading = true, errorMessage = null, infoMessage = null)
 
-        val preferredModel = getGeminiPreferredModel()
-        viewModelScope.launch {
-            val existingGeminiIngs = state.components.map { comp ->
+        viewModelScope.launch{
+            val existingGeminiIngs = state.components.map{ comp ->
                 val parsedQty = NumberUtils.parseDoubleSafe(comp.quantity, 0.0)
                 GeminiIngredient(
                     name = comp.itemName,
@@ -751,18 +902,67 @@ class RecipeEditViewModel(
                 )
             }
 
-            val result = geminiService.completeMissingIngredients(
-                apiKey = apiKey,
-                recipeName = state.name,
-                description = state.description.takeIf { it.isNotBlank() },
-                baseYield = NumberUtils.parseDoubleSafe(state.baseYield, 1.0),
-                yieldUnit = state.yieldUnit,
-                existingIngredients = existingGeminiIngs,
-                userCustomPrompt = userCustomPrompt,
-                preferredModel = preferredModel
-            )
+            val useOpenAiPrimary = (preferredProvider == AiProvider.OPENAI && openAiKey.isNotBlank()) || geminiKey.isBlank()
 
-            result.onSuccess { response ->
+            val primaryResult = if (useOpenAiPrimary){
+                openAiService.completeMissingIngredients(
+                    apiKey = openAiKey,
+                    recipeName = state.name,
+                    baseYield = state.baseYield,
+                    yieldUnit = state.yieldUnit,
+                    existingIngredients = existingGeminiIngs,
+                    customPrompt = userCustomPrompt,
+                    preferredModel = getOpenAiPreferredModel()
+                )
+            } else{
+                geminiService.completeMissingIngredients(
+                    apiKey = geminiKey,
+                    recipeName = state.name,
+                    description = state.description.takeIf{ it.isNotBlank() },
+                    baseYield = NumberUtils.parseDoubleSafe(state.baseYield, 1.0),
+                    yieldUnit = state.yieldUnit,
+                    existingIngredients = existingGeminiIngs,
+                    userCustomPrompt = userCustomPrompt,
+                    preferredModel = getGeminiPreferredModel()
+                )
+            }
+
+            var finalResult = primaryResult
+            var providerUsed = if (useOpenAiPrimary) "ChatGPT (${getOpenAiPreferredModel()})" else "Gemini (${getGeminiPreferredModel()})"
+
+            if (primaryResult.isFailure){
+                val canFallback = if (useOpenAiPrimary) geminiKey.isNotBlank() else openAiKey.isNotBlank()
+                if (canFallback){
+                    val fallbackResult = if (useOpenAiPrimary){
+                        geminiService.completeMissingIngredients(
+                            apiKey = geminiKey,
+                            recipeName = state.name,
+                            description = state.description.takeIf{ it.isNotBlank() },
+                            baseYield = NumberUtils.parseDoubleSafe(state.baseYield, 1.0),
+                            yieldUnit = state.yieldUnit,
+                            existingIngredients = existingGeminiIngs,
+                            userCustomPrompt = userCustomPrompt,
+                            preferredModel = getGeminiPreferredModel()
+                        )
+                    } else{
+                        openAiService.completeMissingIngredients(
+                            apiKey = openAiKey,
+                            recipeName = state.name,
+                            baseYield = state.baseYield,
+                            yieldUnit = state.yieldUnit,
+                            existingIngredients = existingGeminiIngs,
+                            customPrompt = userCustomPrompt,
+                            preferredModel = getOpenAiPreferredModel()
+                        )
+                    }
+                    if (fallbackResult.isSuccess){
+                        finalResult = fallbackResult
+                        providerUsed = if (useOpenAiPrimary) "Gemini (fallback automatico)" else "ChatGPT (fallback automatico)"
+                    }
+                }
+            }
+
+            finalResult.onSuccess{ response ->
                 applyGeminiIngredients(response.ingredients, clearExisting = false)
 
                 val newInstructions = if (state.instructions.isBlank() && !response.instructions.isNullOrBlank()){
@@ -772,19 +972,22 @@ class RecipeEditViewModel(
                 _uiState.value = _uiState.value.copy(
                     instructions = newInstructions,
                     isAiLoading = false,
-                    infoMessage = "✨ Pesi, dosi, costi e allergeni mancanti completati da Gemini!"
+                    infoMessage = "✨ Pesi, dosi, costi e allergeni mancanti completati da $providerUsed!"
                 )
                 onComplete()
-            }.onFailure { err ->
+            }.onFailure{ err ->
                 _uiState.value = _uiState.value.copy(
                     isAiLoading = false,
-                    errorMessage = "Errore Gemini: ${err.message}"
+                    errorMessage = "Errore AI ($providerUsed): ${err.message}"
                 )
             }
         }
     }
 
-    fun generateInstructionsWithGemini(userCustomPrompt: String? = null, onComplete: () -> Unit = {}){
+    /**
+     * Genera esclusivamente il procedimento numerato passo-passo con l'AI.
+     */
+    fun generateInstructionsWithAi(userCustomPrompt: String? = null, onComplete: () -> Unit = {}){
         val state = _uiState.value
         if (state.name.isBlank()){
             _uiState.value = state.copy(errorMessage = "Inserisci il nome della ricetta.")
@@ -795,17 +998,22 @@ class RecipeEditViewModel(
             return
         }
 
-        val apiKey = getGeminiApiKey()
-        if (apiKey.isBlank()){
+        val preferredProvider = getPreferredAiProvider()
+        val geminiKey = getGeminiApiKey()
+        val openAiKey = getOpenAiApiKey()
+
+        val primaryKey = if (preferredProvider == AiProvider.OPENAI) openAiKey else geminiKey
+        val secondaryKey = if (preferredProvider == AiProvider.OPENAI) geminiKey else openAiKey
+
+        if (primaryKey.isBlank() && secondaryKey.isBlank()){
             _uiState.value = state.copy(errorMessage = "API_KEY_REQUIRED")
             return
         }
 
         _uiState.value = state.copy(isAiLoading = true, errorMessage = null, infoMessage = null)
 
-        val preferredModel = getGeminiPreferredModel()
-        viewModelScope.launch {
-            val existingGeminiIngs = state.components.map { comp ->
+        viewModelScope.launch{
+            val existingGeminiIngs = state.components.map{ comp ->
                 val parsedQty = NumberUtils.parseDoubleSafe(comp.quantity, 0.0)
                 GeminiIngredient(
                     name = comp.itemName,
@@ -817,28 +1025,87 @@ class RecipeEditViewModel(
                 )
             }
 
-            val result = geminiService.generateInstructionsOnly(
-                apiKey = apiKey,
-                recipeName = state.name,
-                ingredients = existingGeminiIngs,
-                userCustomPrompt = userCustomPrompt,
-                preferredModel = preferredModel
-            )
+            val useOpenAiPrimary = (preferredProvider == AiProvider.OPENAI && openAiKey.isNotBlank()) || geminiKey.isBlank()
 
-            result.onSuccess { instructions ->
+            val primaryResult: Result<String> = if (useOpenAiPrimary){
+                openAiService.generateInstructions(
+                    apiKey = openAiKey,
+                    recipeName = state.name,
+                    baseYield = state.baseYield,
+                    yieldUnit = state.yieldUnit,
+                    ingredients = existingGeminiIngs,
+                    customPrompt = userCustomPrompt,
+                    preferredModel = getOpenAiPreferredModel()
+                ).map{ it.instructions ?: "" }
+            } else{
+                geminiService.generateInstructionsOnly(
+                    apiKey = geminiKey,
+                    recipeName = state.name,
+                    ingredients = existingGeminiIngs,
+                    userCustomPrompt = userCustomPrompt,
+                    preferredModel = getGeminiPreferredModel()
+                )
+            }
+
+            var finalResult = primaryResult
+            var providerUsed = if (useOpenAiPrimary) "ChatGPT (${getOpenAiPreferredModel()})" else "Gemini (${getGeminiPreferredModel()})"
+
+            if (primaryResult.isFailure){
+                val canFallback = if (useOpenAiPrimary) geminiKey.isNotBlank() else openAiKey.isNotBlank()
+                if (canFallback){
+                    val fallbackResult: Result<String> = if (useOpenAiPrimary){
+                        geminiService.generateInstructionsOnly(
+                            apiKey = geminiKey,
+                            recipeName = state.name,
+                            ingredients = existingGeminiIngs,
+                            userCustomPrompt = userCustomPrompt,
+                            preferredModel = getGeminiPreferredModel()
+                        )
+                    } else{
+                        openAiService.generateInstructions(
+                            apiKey = openAiKey,
+                            recipeName = state.name,
+                            baseYield = state.baseYield,
+                            yieldUnit = state.yieldUnit,
+                            ingredients = existingGeminiIngs,
+                            customPrompt = userCustomPrompt,
+                            preferredModel = getOpenAiPreferredModel()
+                        ).map{ it.instructions ?: "" }
+                    }
+                    if (fallbackResult.isSuccess){
+                        finalResult = fallbackResult
+                        providerUsed = if (useOpenAiPrimary) "Gemini (fallback automatico)" else "ChatGPT (fallback automatico)"
+                    }
+                }
+            }
+
+            finalResult.onSuccess{ instructions ->
                 _uiState.value = _uiState.value.copy(
                     instructions = instructions,
                     isAiLoading = false,
-                    infoMessage = "✨ Passaggi della ricetta generati con successo!"
+                    infoMessage = "✨ Passaggi della ricetta generati con successo da $providerUsed!"
                 )
                 onComplete()
-            }.onFailure { err ->
+            }.onFailure{ err ->
                 _uiState.value = _uiState.value.copy(
                     isAiLoading = false,
-                    errorMessage = "Errore Gemini: ${err.message}"
+                    errorMessage = "Errore AI ($providerUsed): ${err.message}"
                 )
             }
         }
+    }
+
+    // Alias per retrocompatibilità
+    fun generateRecipeWithGemini(userCustomPrompt: String? = null, onComplete: () -> Unit = {}){
+        generateRecipeWithAi(userCustomPrompt, onComplete)
+    }
+
+    fun completeMissingWithGemini(userCustomPrompt: String? = null, onComplete: () -> Unit = {}){
+        completeMissingWithAi(userCustomPrompt, onComplete)
+    }
+
+    fun generateInstructionsWithGemini(userCustomPrompt: String? = null, onComplete: () -> Unit = {}){
+        generateInstructionsWithAi(userCustomPrompt, onComplete)
     }
 
     fun clearError(){

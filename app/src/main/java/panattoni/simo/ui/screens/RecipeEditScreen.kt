@@ -1,4 +1,4 @@
-﻿package panattoni.simo.ui.screens
+package panattoni.simo.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -59,12 +59,15 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -81,6 +84,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import panattoni.simo.data.model.Item
 import panattoni.simo.data.model.ItemType
+import panattoni.simo.data.remote.AiProvider
+import panattoni.simo.data.remote.OpenAiModel
 import panattoni.simo.domain.MeasurementUnit
 import panattoni.simo.ui.components.SimoTopBar
 import panattoni.simo.util.NumberUtils
@@ -843,22 +848,24 @@ fun RecipeEditScreen(
         )
     }
 
-    // Dialog Assistente Gemini AI
+    // Dialog Assistente AI (Google Gemini & ChatGPT)
     if (showAiDialog){
         GeminiAssistantDialog(
             recipeName = uiState.name,
             hasIngredients = uiState.components.isNotEmpty(),
             isLoading = uiState.isAiLoading,
-            preferredModelId = viewModel.getGeminiPreferredModel(),
+            preferredProvider = viewModel.getPreferredAiProvider(),
+            preferredGeminiModelId = viewModel.getGeminiPreferredModel(),
+            preferredOpenAiModelId = viewModel.getOpenAiPreferredModel(),
             onDismiss ={ showAiDialog = false },
             onGenerateFullRecipe ={ customPrompt ->
-                viewModel.generateRecipeWithGemini(customPrompt, onComplete ={ showAiDialog = false })
+                viewModel.generateRecipeWithAi(customPrompt, onComplete ={ showAiDialog = false })
             },
             onCompleteMissing ={ customPrompt ->
-                viewModel.completeMissingWithGemini(customPrompt, onComplete ={ showAiDialog = false })
+                viewModel.completeMissingWithAi(customPrompt, onComplete ={ showAiDialog = false })
             },
             onGenerateInstructions ={ customPrompt ->
-                viewModel.generateInstructionsWithGemini(customPrompt, onComplete ={ showAiDialog = false })
+                viewModel.generateInstructionsWithAi(customPrompt, onComplete ={ showAiDialog = false })
             },
             onOpenApiKeyConfig ={
                 showAiDialog = false
@@ -867,14 +874,17 @@ fun RecipeEditScreen(
         )
     }
 
-    // Dialog Configurazione Impostazioni e Modello Gemini
+    // Dialog Configurazione Impostazioni e Modelli AI (Gemini & ChatGPT)
     if (showApiKeyDialog){
         GeminiApiKeyDialog(
-            currentApiKey = viewModel.getGeminiApiKey(),
-            currentModelId = viewModel.getGeminiPreferredModel(),
+            currentProvider = viewModel.getPreferredAiProvider(),
+            currentGeminiApiKey = viewModel.getGeminiApiKey(),
+            currentGeminiModelId = viewModel.getGeminiPreferredModel(),
+            currentOpenAiApiKey = viewModel.getOpenAiApiKey(),
+            currentOpenAiModelId = viewModel.getOpenAiPreferredModel(),
             onDismiss ={ showApiKeyDialog = false },
-            onSave ={ newKey, newModelId ->
-                viewModel.saveGeminiSettings(newKey, newModelId)
+            onSave ={ provider, geminiKey, geminiModel, openAiKey, openAiModel ->
+                viewModel.saveAiSettings(provider, geminiKey, geminiModel, openAiKey, openAiModel)
                 showApiKeyDialog = false
             }
         )
@@ -1793,7 +1803,9 @@ fun GeminiAssistantDialog(
     recipeName: String,
     hasIngredients: Boolean,
     isLoading: Boolean,
-    preferredModelId: String = GeminiModel.DEFAULT.modelId,
+    preferredProvider: AiProvider = AiProvider.DEFAULT,
+    preferredGeminiModelId: String = GeminiModel.DEFAULT.modelId,
+    preferredOpenAiModelId: String = OpenAiModel.DEFAULT.modelId,
     onDismiss: () -> Unit,
     onGenerateFullRecipe: (customPrompt: String?) -> Unit,
     onCompleteMissing: (customPrompt: String?) -> Unit,
@@ -1801,7 +1813,10 @@ fun GeminiAssistantDialog(
     onOpenApiKeyConfig: () -> Unit
 ){
     var customPrompt by remember{ mutableStateOf("") }
-    val activeModel = GeminiModel.fromModelId(preferredModelId)
+    val geminiModel = GeminiModel.fromModelId(preferredGeminiModelId)
+    val openAiModel = OpenAiModel.fromModelId(preferredOpenAiModelId)
+    val isChatGpt = preferredProvider == AiProvider.OPENAI
+    val activeDisplayName = if (isChatGpt) "ChatGPT (${openAiModel.displayName})" else "Gemini (${geminiModel.displayName})"
 
     AlertDialog(
         onDismissRequest ={ if (!isLoading) onDismiss() },
@@ -1817,7 +1832,7 @@ fun GeminiAssistantDialog(
                     Text("✨", fontSize = 20.sp)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Assistente AI Gemini",
+                        text = "Assistente AI",
                         color = Color(0xFF6A1B9A),
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
@@ -1850,7 +1865,7 @@ fun GeminiAssistantDialog(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ){
                             Text(
-                                text = "✨ Elaborazione con Gemini in corso...",
+                                text = if (isChatGpt) "✨ Elaborazione con ChatGPT in corso..." else "✨ Elaborazione con Gemini in corso...",
                                 color = Color(0xFF6A1B9A),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
@@ -1878,7 +1893,7 @@ fun GeminiAssistantDialog(
                         modifier = Modifier.fillMaxWidth()
                     ){
                         Text(
-                            text = "ℹ️ Scrivi prima il nome della ricetta in alto per consentire a Gemini di elaborarla.",
+                            text = "ℹ️ Scrivi prima il nome della ricetta in alto per consentire all'AI di elaborarla.",
                             color = MaterialTheme.colorScheme.onErrorContainer,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(10.dp)
@@ -1893,7 +1908,7 @@ fun GeminiAssistantDialog(
                     )
                 }
 
-                // Badge Modello Gemini attivo
+                // Badge Provider e Modello AI attivo
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = Color(0xFFEDE7F6),
@@ -1911,24 +1926,24 @@ fun GeminiAssistantDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.weight(1f)
                         ){
-                            Text("⚡", fontSize = 14.sp)
+                            Text(if (isChatGpt) "🤖" else "⚡", fontSize = 14.sp)
                             Spacer(modifier = Modifier.width(6.dp))
                             Column{
                                 Text(
-                                    text = "Modello: ${activeModel.displayName}",
+                                    text = "Provider attivo: $activeDisplayName",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF4A148C)
                                 )
                                 Text(
-                                    text = "Fallback a cascata verso il basso se occupato",
+                                    text = "Fallback automatico tra modelli e provider",
                                     fontSize = 10.sp,
                                     color = Color(0xFF6A1B9A)
                                 )
                             }
                         }
                         Text(
-                            text = "Cambia",
+                            text = "Modifica",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF6A1B9A)
@@ -1939,7 +1954,7 @@ fun GeminiAssistantDialog(
                 OutlinedTextField(
                     value = customPrompt,
                     onValueChange ={ customPrompt = it },
-                    label ={ Text("Istruzioni speciali per Gemini (opzionale)") },
+                    label ={ Text("Istruzioni speciali per l'AI (opzionale)") },
                     placeholder ={ Text("es. per 6 persone, senza glutine, frolla montata...") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -2052,15 +2067,26 @@ fun GeminiAssistantDialog(
     )
 }
 
+/**
+ * Dialog unificato per la configurazione e crittografia hardware delle chiavi API (Gemini & ChatGPT),
+ * con selezione del provider predefinito e modelli supportati.
+ */
 @Composable
 fun GeminiApiKeyDialog(
-    currentApiKey: String,
-    currentModelId: String = GeminiModel.DEFAULT.modelId,
+    currentProvider: AiProvider = AiProvider.DEFAULT,
+    currentGeminiApiKey: String = "",
+    currentGeminiModelId: String = GeminiModel.DEFAULT.modelId,
+    currentOpenAiApiKey: String = "",
+    currentOpenAiModelId: String = OpenAiModel.DEFAULT.modelId,
     onDismiss: () -> Unit,
-    onSave: (apiKey: String, modelId: String) -> Unit
+    onSave: (provider: AiProvider, geminiKey: String, geminiModelId: String, openAiKey: String, openAiModelId: String) -> Unit
 ){
-    var keyInput by remember{ mutableStateOf(currentApiKey) }
-    var selectedModelId by remember{ mutableStateOf(currentModelId) }
+    var selectedProvider by remember{ mutableStateOf(currentProvider) }
+    var geminiKeyInput by remember{ mutableStateOf(currentGeminiApiKey) }
+    var geminiSelectedModelId by remember{ mutableStateOf(currentGeminiModelId) }
+    var openAiKeyInput by remember{ mutableStateOf(currentOpenAiApiKey) }
+    var openAiSelectedModelId by remember{ mutableStateOf(currentOpenAiModelId) }
+    var selectedTab by remember{ mutableIntStateOf(if (currentProvider == AiProvider.OPENAI) 1 else 0) }
     val uriHandler = LocalUriHandler.current
 
     AlertDialog(
@@ -2072,7 +2098,7 @@ fun GeminiApiKeyDialog(
                 Text("⚙️", fontSize = 20.sp)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Impostazioni Google Gemini",
+                    text = "Impostazioni Intelligenza Artificiale",
                     color = MacaronPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
@@ -2086,112 +2112,316 @@ fun GeminiApiKeyDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ){
+                // Selettore Provider Predefinito
                 Text(
-                    text = "1. Chiave API Google Gemini (Gratuita)",
-                    fontWeight = FontWeight.Bold,
-                    color = MacaronText,
-                    fontSize = 13.sp
-                )
-
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFFE8F5E9),
-                    border = BorderStroke(1.dp, Color(0xFFA5D6A7)),
-                    modifier = Modifier.fillMaxWidth()
-                ){
-                    Column(modifier = Modifier.padding(10.dp)){
-                        Text(
-                            text = "• 100% Gratuito (nessuna carta di credito richiesta)\n• 1.500 richieste al giorno incluse su Google AI Studio\n• Risposte istantanee per pesi, costi e allergeni",
-                            color = Color(0xFF2E7D32),
-                            fontSize = 11.sp,
-                            lineHeight = 15.sp
-                        )
-                    }
-                }
-
-                OutlinedButton(
-                    onClick ={ uriHandler.openUri("https://aistudio.google.com/app/apikey") },
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ){
-                    Text("🌐 Ottieni Chiave Gratis su Google AI Studio", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-
-                OutlinedTextField(
-                    value = keyInput,
-                    onValueChange ={ keyInput = it },
-                    label ={ Text("Incolla la tua Gemini API Key") },
-                    placeholder ={ Text("AIzaSy...") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                if (currentApiKey.isNotBlank()){
-                    Text(
-                        text = "✓ Chiave salvata: ${currentApiKey.take(6)}...${currentApiKey.takeLast(4)}",
-                        color = Color(0xFF2E7D32),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "2. Scelta Modello Gemini",
+                    text = "1. Provider AI Predefinito",
                     fontWeight = FontWeight.Bold,
                     color = MacaronText,
                     fontSize = 13.sp
                 )
                 Text(
-                    text = "Modelli stabili ufficiali con aggiornamento automatico. Se Gemini Flash è saturo, l'app scala in automatico su Flash Lite:",
+                    text = "Scegli il motore AI principale. Se il provider è momentaneamente occupato o senza crediti, l'app effettua automaticamente il fallback sull'altro se configurato:",
                     fontSize = 11.sp,
                     color = MacaronSubtleText,
                     lineHeight = 15.sp
                 )
 
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)){
-                    GeminiModel.entries.forEach{ model ->
-                        val isSelected = model.modelId == selectedModelId
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (isSelected) Color(0xFFEDE7F6) else Color.Transparent,
-                            border = BorderStroke(
-                                width = if (isSelected) 2.dp else 1.dp,
-                                color = if (isSelected) Color(0xFF6A1B9A) else Color(0xFFE0E0E0)
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable{ selectedModelId = model.modelId }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ){
+                    // Opzione Google Gemini
+                    val isGeminiSelected = selectedProvider == AiProvider.GEMINI
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isGeminiSelected) Color(0xFFEDE7F6) else Color.Transparent,
+                        border = BorderStroke(
+                            width = if (isGeminiSelected) 2.dp else 1.dp,
+                            color = if (isGeminiSelected) Color(0xFF6A1B9A) else Color(0xFFE0E0E0)
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable{
+                                selectedProvider = AiProvider.GEMINI
+                                selectedTab = 0
+                            }
+                    ){
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ){
-                            Row(
+                            RadioButton(
+                                selected = isGeminiSelected,
+                                onClick ={
+                                    selectedProvider = AiProvider.GEMINI
+                                    selectedTab = 0
+                                },
+                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF6A1B9A))
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Gemini",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = if (isGeminiSelected) Color(0xFF4A148C) else MacaronText
+                            )
+                        }
+                    }
+
+                    // Opzione ChatGPT (OpenAI)
+                    val isOpenAiSelected = selectedProvider == AiProvider.OPENAI
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isOpenAiSelected) Color(0xFFEDE7F6) else Color.Transparent,
+                        border = BorderStroke(
+                            width = if (isOpenAiSelected) 2.dp else 1.dp,
+                            color = if (isOpenAiSelected) Color(0xFF6A1B9A) else Color(0xFFE0E0E0)
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable{
+                                selectedProvider = AiProvider.OPENAI
+                                selectedTab = 1
+                            }
+                    ){
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ){
+                            RadioButton(
+                                selected = isOpenAiSelected,
+                                onClick ={
+                                    selectedProvider = AiProvider.OPENAI
+                                    selectedTab = 1
+                                },
+                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF6A1B9A))
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "ChatGPT",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = if (isOpenAiSelected) Color(0xFF4A148C) else MacaronText
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Tab per la configurazione dei singoli provider
+                Text(
+                    text = "2. Configurazione Chiavi e Modelli",
+                    fontWeight = FontWeight.Bold,
+                    color = MacaronText,
+                    fontSize = 13.sp
+                )
+
+                PrimaryTabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color(0xFFF5F5F5),
+                    contentColor = MacaronPrimary
+                ){
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick ={ selectedTab = 0 },
+                        text ={ Text("Google Gemini", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick ={ selectedTab = 1 },
+                        text ={ Text("ChatGPT (OpenAI)", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                    )
+                }
+
+                if (selectedTab == 0){
+                    // Configurazione Google Gemini
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFFE8F5E9),
+                        border = BorderStroke(1.dp, Color(0xFFA5D6A7)),
+                        modifier = Modifier.fillMaxWidth()
+                    ){
+                        Column(modifier = Modifier.padding(10.dp)){
+                            Text(
+                                text = "• 100% Gratuito su Google AI Studio\n• Cifratura hardware AES-256 GCM con Android KeyStore\n• Modello leggero: Gemini Flash Lite • Modello avanzato: Gemini Flash",
+                                color = Color(0xFF2E7D32),
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp
+                            )
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick ={ uriHandler.openUri("https://aistudio.google.com/app/apikey") },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ){
+                        Text("🌐 Ottieni Chiave Gratis su Google AI Studio", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    OutlinedTextField(
+                        value = geminiKeyInput,
+                        onValueChange ={ geminiKeyInput = it },
+                        label ={ Text("Incolla la tua Gemini API Key") },
+                        placeholder ={ Text("AIzaSy...") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    if (currentGeminiApiKey.isNotBlank()){
+                        Text(
+                            text = "✓ Chiave Gemini salvata (${currentGeminiApiKey.take(6)}...${currentGeminiApiKey.takeLast(4)})",
+                            color = Color(0xFF2E7D32),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Text(
+                        text = "Scelta Modello Gemini:",
+                        fontWeight = FontWeight.SemiBold,
+                        color = MacaronText,
+                        fontSize = 12.sp
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)){
+                        GeminiModel.entries.forEach{ model ->
+                            val isSelected = model.modelId == geminiSelectedModelId
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) Color(0xFFEDE7F6) else Color.Transparent,
+                                border = BorderStroke(
+                                    width = if (isSelected) 2.dp else 1.dp,
+                                    color = if (isSelected) Color(0xFF6A1B9A) else Color(0xFFE0E0E0)
+                                ),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .clickable{ geminiSelectedModelId = model.modelId }
                             ){
-                                RadioButton(
-                                    selected = isSelected,
-                                    onClick ={ selectedModelId = model.modelId },
-                                    colors = RadioButtonDefaults.colors(
-                                        selectedColor = Color(0xFF6A1B9A)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ){
+                                    RadioButton(
+                                        selected = isSelected,
+                                        onClick ={ geminiSelectedModelId = model.modelId },
+                                        colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF6A1B9A))
                                     )
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Column(modifier = Modifier.weight(1f)){
-                                    Text(
-                                        text = model.displayName,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp,
-                                        color = if (isSelected) Color(0xFF4A148C) else MacaronText
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Column(modifier = Modifier.weight(1f)){
+                                        Text(
+                                            text = model.displayName,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            color = if (isSelected) Color(0xFF4A148C) else MacaronText
+                                        )
+                                        Text(
+                                            text = model.description,
+                                            fontSize = 10.sp,
+                                            color = MacaronSubtleText,
+                                            lineHeight = 13.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else{
+                    // Configurazione ChatGPT (OpenAI)
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFFE3F2FD),
+                        border = BorderStroke(1.dp, Color(0xFF90CAF9)),
+                        modifier = Modifier.fillMaxWidth()
+                    ){
+                        Column(modifier = Modifier.padding(10.dp)){
+                            Text(
+                                text = "• API ufficiale OpenAI per ChatGPT\n• Cifratura hardware AES-256 GCM con Android KeyStore\n• Modello leggero: GPT-4o Mini • Modello avanzato: GPT-4o",
+                                color = Color(0xFF1565C0),
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp
+                            )
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick ={ uriHandler.openUri("https://platform.openai.com/api-keys") },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ){
+                        Text("🌐 Ottieni Chiave su OpenAI Platform", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    OutlinedTextField(
+                        value = openAiKeyInput,
+                        onValueChange ={ openAiKeyInput = it },
+                        label ={ Text("Incolla la tua OpenAI API Key") },
+                        placeholder ={ Text("sk-proj-...") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    if (currentOpenAiApiKey.isNotBlank()){
+                        Text(
+                            text = "✓ Chiave OpenAI salvata (${currentOpenAiApiKey.take(6)}...${currentOpenAiApiKey.takeLast(4)})",
+                            color = Color(0xFF1565C0),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Text(
+                        text = "Scelta Modello ChatGPT:",
+                        fontWeight = FontWeight.SemiBold,
+                        color = MacaronText,
+                        fontSize = 12.sp
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)){
+                        OpenAiModel.entries.forEach{ model ->
+                            val isSelected = model.modelId == openAiSelectedModelId
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) Color(0xFFEDE7F6) else Color.Transparent,
+                                border = BorderStroke(
+                                    width = if (isSelected) 2.dp else 1.dp,
+                                    color = if (isSelected) Color(0xFF6A1B9A) else Color(0xFFE0E0E0)
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable{ openAiSelectedModelId = model.modelId }
+                            ){
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ){
+                                    RadioButton(
+                                        selected = isSelected,
+                                        onClick ={ openAiSelectedModelId = model.modelId },
+                                        colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF6A1B9A))
                                     )
-                                    Text(
-                                        text = model.description,
-                                        fontSize = 11.sp,
-                                        color = MacaronSubtleText,
-                                        lineHeight = 14.sp
-                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Column(modifier = Modifier.weight(1f)){
+                                        Text(
+                                            text = model.displayName,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            color = if (isSelected) Color(0xFF4A148C) else MacaronText
+                                        )
+                                        Text(
+                                            text = model.description,
+                                            fontSize = 10.sp,
+                                            color = MacaronSubtleText,
+                                            lineHeight = 13.sp
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -2201,8 +2431,16 @@ fun GeminiApiKeyDialog(
         },
         confirmButton ={
             Button(
-                onClick ={ onSave(keyInput.trim(), selectedModelId) },
-                enabled = keyInput.isNotBlank(),
+                onClick ={
+                    onSave(
+                        selectedProvider,
+                        geminiKeyInput.trim(),
+                        geminiSelectedModelId,
+                        openAiKeyInput.trim(),
+                        openAiSelectedModelId
+                    )
+                },
+                enabled = geminiKeyInput.isNotBlank() || openAiKeyInput.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = MacaronPrimary),
                 shape = RoundedCornerShape(10.dp)
             ){
@@ -2216,6 +2454,30 @@ fun GeminiApiKeyDialog(
         }
     )
 }
+
+/**
+ * Overload per retrocompatibilità con chiamate legacy.
+ */
+@Composable
+fun GeminiApiKeyDialog(
+    currentApiKey: String,
+    currentModelId: String = GeminiModel.DEFAULT.modelId,
+    onDismiss: () -> Unit,
+    onSave: (apiKey: String, modelId: String) -> Unit
+){
+    GeminiApiKeyDialog(
+        currentProvider = AiProvider.GEMINI,
+        currentGeminiApiKey = currentApiKey,
+        currentGeminiModelId = currentModelId,
+        currentOpenAiApiKey = "",
+        currentOpenAiModelId = OpenAiModel.DEFAULT.modelId,
+        onDismiss = onDismiss,
+        onSave ={ _, geminiKey, geminiModel, _, _ ->
+            onSave(geminiKey, geminiModel)
+        }
+    )
+}
+
 
 
 
